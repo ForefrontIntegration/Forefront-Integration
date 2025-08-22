@@ -1,32 +1,3 @@
-// Handle contact form submission
-contactForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const name = document.getElementById('contact-name').value;
-    const email = document.getElementById('contact-email').value;
-    const subject = document.getElementById('contact-subject').value;
-    const message = document.getElementById('contact-message').value;
-
-    if (name && email && subject && message) {
-        contactMessageStatus.textContent = 'Thank you for your message! We will get back to you shortly.';
-        contactMessageStatus.classList.remove('hidden', 'bg-red-100', 'text-red-700');
-        contactMessageStatus.classList.add('bg-green-100', 'text-green-700');
-        contactMessageStatus.classList.remove('hidden');
-        contactForm.reset();
-    } else {
-        contactMessageStatus.textContent = 'Please fill out all required fields.';
-        contactMessageStatus.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-        contactMessageStatus.classList.add('bg-red-100', 'text-red-700');
-        contactMessageStatus.classList.remove('hidden');
-    }
-});
-Make sure you replace the incomplete section with this corrected code and also add the necessary closing tags for the entire script and HTML document.
-
-A full, corrected final version of the code is provided below. Once you've replaced your existing code, commit the changes and push them to your GitHub repository. The website should then appear correctly.
-
-Complete Corrected Code
-HTML
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
