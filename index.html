@@ -332,7 +332,7 @@
             // Smooth scrolling for internal links
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
+        
                     document.querySelector(this.getAttribute('href')).scrollIntoView({
                         behavior: 'smooth'
                     });
@@ -462,7 +462,7 @@
 
             // Handle booking form submission
             bookingForm.addEventListener('submit', function(e) {
-                e.preventDefault();
+            
 
                 // Get form data
                 const name = document.getElementById('name').value;
@@ -504,7 +504,7 @@
             
             // Handle contact form submission
             contactForm.addEventListener('submit', function(e) {
-                e.preventDefault();
+            
 
                 const name = document.getElementById('contact-name').value;
                 const email = document.getElementById('contact-email').value;
