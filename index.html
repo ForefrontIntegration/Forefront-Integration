@@ -1,1 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forefront Integration - AI Business Solutions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* New Professional Palette */
+        :root {
+            --color-gold: #FFD700;
+            --color-champagne: #F0E68C;
+            --color-silver: #A9B1B7;
+            --color-dark-gray: #1A202C;
+            --color-medium-gray: #2D3748;
+            --color-light-gray: #E2E8F0;
+        }
+
+        /* Custom gradient for a professional, dark look */
+        .gradient-bg {
+            background-color: var(--color-dark-gray);
+            background-image: linear-gradient(180deg, #1A202C 0%, #2D3748 100%);
+        }
+
+        /* Custom metallic gold text effect */
+        .metallic-text {
+            background: linear-gradient(90deg, #B8860B, var(--color-gold), var(--color-champagne), var(--color-gold));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+            background-size: 200% 100%;
+        }
+
+        @keyframes shine {
+            to {
+                background-position: 200% center;
+            }
+        }
+
+        .btn-primary {
+            @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
+        }
+
+        .btn-secondary {
+            @apply bg-transparent text-gray-400 font-semibold py-3 px-6 rounded-xl border border-gray-400 shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-gray-400 hover:text-white;
+        }
+        
+        .scroll-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+        }
+
+        .scroll-to-top-icon {
+            @apply bg-gray-400 text-white p-3 rounded-full shadow-lg hover:bg-gray-500 transition duration-300 ease-in-out;
+        }
+
+        .gemini-card {
+            @apply bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 mt-8;
+        }
+        .gemini-output {
+            @apply whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-300;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <!-- Scroll to Top Button -->
+    <button id="scrollToTopBtn" class="scroll-to-top">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 scroll-to-top-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l7.5-7.5 7.5 7.5m-15 6l7.5-7.5 7.5 7.5" />
+        </svg>
+    </button>
+
+    <!-- Header & Hero Section -->
+    <header class="w-full bg-gray-800 shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <span class="text-3xl font-bold text-gray-100">
+                    <span class="text-yellow-500">Forefront</span><span class="text-gray-400">Integration</span>
+                </span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#solutions" class="text-gray-400 hover:text-yellow-400 transition duration-300">Solutions</a>
+                <a href="#features" class="text-gray-400 hover:text-yellow-400 transition duration-300">Features</a>
+                <a href="#booking" class="text-gray-400 hover:text-yellow-400 transition duration-300">Book Now</a>
+                <a href="#contact" class="text-gray-400 hover:text-yellow-400 transition duration-300">Contact</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero" class="gradient-bg py-16 md:py-24">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
+            <h1 class="text-4xl sm:text-5xl lg:text-7xl font-extrabold leading-tight mb-4 max-w-4xl metallic-text">
+                The Future of Business
+            </h1>
+            <p class="text-lg sm:text-xl text-gray-400 mb-8 max-w-3xl">
+                Streamline operations, reduce administrative tasks, and save time with intelligent AI solutions designed for SMBs.
+            </p>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <a href="#booking" class="btn-primary">Schedule a Meeting</a>
+                <a href="#solutions" class="btn-secondary">Explore Solutions</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solutions Section -->
+    <section id="solutions" class="bg-gray-800 py-16 md:py-24">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 mb-4">
+                Solutions that Work for You
+            </h2>
+            <p class="text-lg text-gray-400 mb-12 max-w-3xl mx-auto">
+                We provide tailored AI integrations to help you grow your business and focus on what matters most.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Solution Card 1 -->
+                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
+                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l-.879-.659c-.379-.283-.497-.732-.322-1.125a1.868 1.868 0 0 1 1.765-1.053H18.75" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-100 mb-2">Automated Booking</h3>
+                    <p class="text-gray-400">
+                        Our AI handles appointments, reminders, and confirmations, so you can reduce no-shows and increase revenue.
+                    </p>
+                </div>
+                <!-- Solution Card 2 -->
+                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
+                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.5 3.133 2.75 7.125 2.75 3.992 0 7.125-1.25 7.125-2.75m-9.75-3h9m-9-3h9m-9.75 3A.75.75 0 0 1 12 12c.382 0 .75.368.75.75-.008.382-.375.75-.75.75h-.008Zm9.75-3a.75.75 0 0 1-.75.75c-.382 0-.75-.368-.75-.75.008-.382.375-.75.75-.75h.008Z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-100 mb-2">24/7 Customer Support</h3>
+                    <p class="text-gray-400">
+                        An AI assistant can answer customer inquiries, providing instant support and freeing up your team.
+                    </p>
+                </div>
+                <!-- Solution Card 3 -->
+                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
+                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09zM18.25 21l-2.75-2.75M21 18.25L18.25 15.5M12 12h.01" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-100 mb-2">Monthly Support Plan</h3>
+                    <p class="text-gray-400">
+                        Our monthly support plan includes AI performance monitoring, system updates, and dedicated technical support to keep your business running smoothly.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Booking Section -->
+    <section id="booking" class="gradient-bg py-16 md:py-24">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Booking Form -->
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 mb-4">
+                        Book Your Free Consultation
+                    </h2>
+                    <p class="text-lg text-gray-400 mb-6">
+                        Fill out the form below to schedule a time to talk about your business needs and how AI can help you.
+                    </p>
+                    <form id="booking-form" class="space-y-6 bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-400 mb-1">Full Name</label>
+                            <input type="text" id="name" name="name" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                        </div>
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-400 mb-1">Business Email</label>
+                            <input type="email" id="email" name="email" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                        </div>
+                        <div>
+                            <label for="consultation-topic" class="block text-sm font-medium text-gray-400 mb-1">Consultation Topic</label>
+                            <textarea id="consultation-topic" name="consultation-topic" rows="3" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" placeholder="e.g., Automating customer support, improving sales funnel efficiency, etc."></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="date" class="block text-sm font-medium text-gray-400 mb-1">Preferred Date</label>
+                                <input type="date" id="date" name="date" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                            </div>
+                            <div>
+                                <label for="time" class="block text-sm font-medium text-gray-400 mb-1">Preferred Time</label>
+                                <input type="time" id="time" name="time" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full btn-primary">Confirm Appointment</button>
+                    </form>
+                    <div id="booking-message" class="mt-4 hidden text-center p-4 rounded-xl"></div>
+                    
+                    <!-- AI Feature Section -->
+                    <div id="gemini-feature-container" class="hidden">
+                        <div class="gemini-card">
+                            <h3 class="text-xl font-semibold text-gray-100 mb-4">AI-Powered Follow-up</h3>
+                            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
+                                <button id="generate-summary-btn" class="btn-primary flex-1">
+                                    ✨ Generate Summary & Draft ✨
+                                </button>
+                            </div>
+                            <div id="gemini-output" class="p-6 bg-gray-800 rounded-xl border border-gray-700">
+                                <p class="text-gray-500 text-center" id="gemini-placeholder">Click the button above to generate your consultation summary and email draft.</p>
+                                <div id="gemini-spinner" class="hidden text-center">
+                                    <svg class="animate-spin h-8 w-8 text-yellow-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </div>
+                                <div id="gemini-content" class="gemini-output hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integrated Calendar / Bookings List -->
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 mb-4">
+                        Upcoming Appointments
+                    </h2>
+                    <div id="bookings-list" class="space-y-4 bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700">
+                        <p class="text-gray-500 text-center" id="no-bookings-message">No appointments scheduled yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="bg-gray-800 py-16 md:py-24">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:flex lg:items-center lg:space-x-12">
+                <div class="lg:w-1/2">
+                    <img src="https://placehold.co/800x600/2D3748/A9B1B7?text=AI+Solutions" alt="An image showing AI-driven insights on a dashboard." class="rounded-2xl shadow-xl w-full h-auto">
+                </div>
+                <div class="lg:w-1/2 mt-12 lg:mt-0">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 mb-6">
+                        Key Features of Our Systems
+                    </h2>
+                    <ul class="list-none space-y-6">
+                        <li class="flex items-start">
+                            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-700 text-yellow-400 mr-4 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c-.379-.283-.497-.732-.322-1.125a1.868 1.868 0 0 1 1.765-1.053H18.75" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-100 text-lg">Instant and Reliable</h3>
+                                <p class="text-gray-400">AI agents are always on, providing 24/7 support without human limitations or errors.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-700 text-yellow-400 mr-4 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-100 text-lg">Custom-Built for Your Needs</h3>
+                                <p class="text-gray-400">Our solutions are not one-size-fits-all. We build systems that integrate seamlessly with your existing workflows.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-700 text-yellow-400 mr-4 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l6-6 6 6m6-6l-6 6-6-6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-100 text-lg">Scalable and Efficient</h3>
+                                <p class="text-gray-400">Our systems grow with your business, handling increasing demand without sacrificing performance.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Contact Section -->
+    <section id="contact" class="gradient-bg py-16 md:py-24">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 text-center mb-4">
+                Get in Touch
+            </h2>
+            <p class="text-lg text-gray-400 text-center mb-12 max-w-3xl mx-auto">
+                Have a question or want to discuss a custom project? Fill out the form below and we'll get back to you shortly.
+            </p>
+            <div class="max-w-3xl mx-auto bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700">
+                <form id="contact-form" class="space-y-6">
+                    <div>
+                        <label for="contact-name" class="block text-sm font-medium text-gray-400 mb-1">Name</label>
+                        <input type="text" id="contact-name" name="name" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                    </div>
+                    <div>
+                        <label for="contact-email" class="block text-sm font-medium text-gray-400 mb-1">Email Address</label>
+                        <input type="email" id="contact-email" name="email" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                    </div>
+                    <div>
+                        <label for="contact-subject" class="block text-sm font-medium text-gray-400 mb-1">Subject</label>
+                        <input type="text" id="contact-subject" name="subject" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                    </div>
+                    <div>
+                        <label for="contact-message" class="block text-sm font-medium text-gray-400 mb-1">Message</label>
+                        <textarea id="contact-message" name="message" rows="5" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required></textarea>
+                    </div>
+                    <button type="submit" class="w-full btn-primary">Send Message</button>
+                </form>
+                <div id="contact-message-status" class="mt-4 hidden text-center p-4 rounded-xl"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-700 text-gray-400 py-12">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2025 Forefront Integration. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Smooth scrolling for internal links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // Show/hide scroll to top button
+            const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+            const showButton = () => {
+                if (window.scrollY > 300) {
+                    scrollToTopBtn.classList.add('visible');
+                } else {
+                    scrollToTopBtn.classList.remove('visible');
+                }
+            };
+            window.addEventListener('scroll', showButton);
+            showButton(); // Check on page load
+
+            // Store bookings in a simple array
+            const bookings = [];
+
+            // Get elements
+            const bookingForm = document.getElementById('booking-form');
+            const bookingMessage = document.getElementById('booking-message');
+            const bookingsList = document.getElementById('bookings-list');
+            const noBookingsMessage = document.getElementById('no-bookings-message');
+            const generateSummaryBtn = document.getElementById('generate-summary-btn');
+            const geminiFeatureContainer = document.getElementById('gemini-feature-container');
+            const geminiOutput = document.getElementById('gemini-output');
+            const geminiPlaceholder = document.getElementById('gemini-placeholder');
+            const geminiSpinner = document.getElementById('gemini-spinner');
+            const geminiContent = document.getElementById('gemini-content');
+            const contactForm = document.getElementById('contact-form');
+            const contactMessageStatus = document.getElementById('contact-message-status');
+
+            // Function to render the bookings list
+            function renderBookings() {
+                // Clear the list first
+                bookingsList.innerHTML = '';
+                
+                if (bookings.length === 0) {
+                    noBookingsMessage.style.display = 'block';
+                    bookingsList.appendChild(noBookingsMessage);
+                } else {
+                    noBookingsMessage.style.display = 'none';
+                    bookings.forEach(booking => {
+                        const bookingCard = document.createElement('div');
+                        bookingCard.className = 'bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-sm';
+                        bookingCard.innerHTML = `
+                            <h4 class="font-bold text-yellow-500 text-lg">${booking.name}</h4>
+                            <p class="text-gray-300 text-sm mt-1">Date: <span class="font-medium">${booking.date}</span></p>
+                            <p class="text-gray-300 text-sm mt-1">Time: <span class="font-medium">${booking.time}</span></p>
+                            <p class="text-gray-300 text-sm mt-1">Email: <span class="font-medium">${booking.email}</span></p>
+                            <p class="text-gray-300 text-sm mt-1">Topic: <span class="font-medium">${booking.topic}</span></p>
+                        `;
+                        bookingsList.appendChild(bookingCard);
+                    });
+                }
+            }
+
+            // Function to handle the Gemini API call
+            async function generateSummary(name, email, topic, date, time) {
+                // Show the loading spinner and hide previous content
+                geminiPlaceholder.classList.add('hidden');
+                geminiSpinner.classList.remove('hidden');
+                geminiContent.classList.add('hidden');
+                geminiContent.innerHTML = '';
+
+                const prompt = `You are an AI assistant for a business consultation company called 'Forefront Integration'. 
+                A new client named ${name} has booked a consultation for ${date} at ${time} via email ${email}.
+                The consultation topic is: "${topic}".
+                
+                Generate a concise summary of the consultation topic, list 3-4 potential discussion points for the meeting, and provide a professional email draft to send to the client. The email should be friendly, confirm the details of the booking, and offer to prepare a more detailed agenda based on their needs.
+                
+                Format the response as follows:
+                ---
+                Summary: [A brief, professional summary]
+                
+                Discussion Points:
+                - Point 1
+                - Point 2
+                - Point 3
+                
+                Email Draft:
+                Subject: Confirmation of your Forefront Integration consultation
+                
+                Hi ${name},
+                
+                Thank you for booking a consultation with Forefront Integration! This email confirms your meeting for [Date] at [Time].
+                
+                Based on your interest in "${topic}", we've prepared a preliminary agenda to get us started. We're looking forward to discussing this with you and exploring how our AI solutions can help your business.
+                
+                Best regards,
+                The Forefront Integration Team`;
+
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        geminiContent.textContent = text;
+                        geminiContent.classList.remove('hidden');
+                    } else {
+                        geminiContent.textContent = 'Sorry, something went wrong generating the summary. Please try again.';
+                        geminiContent.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error('Error calling Gemini API:', error);
+                    geminiContent.textContent = 'Failed to connect to the AI service. Please check your network and try again.';
+                    geminiContent.classList.remove('hidden');
+                } finally {
+                    geminiSpinner.classList.add('hidden');
+                }
+            }
+
+            // Handle booking form submission
+            bookingForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Get form data
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                const date = document.getElementById('date').value;
+                const time = document.getElementById('time').value;
+                const topic = document.getElementById('consultation-topic').value;
+
+                if (name && email && date && time) {
+                    // Create a new booking object
+                    const newBooking = { name, email, date, time, topic };
+                    
+                    // Add to the bookings array (simulates calendar integration)
+                    bookings.push(newBooking);
+
+                    // Show success message
+                    bookingMessage.textContent = 'Your appointment has been booked! See below to generate an AI-powered summary.';
+                    bookingMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700');
+                    bookingMessage.classList.add('bg-green-100', 'text-green-700');
+
+                    // Show the AI feature container
+                    geminiFeatureContainer.classList.remove('hidden');
+
+                    // Set up the AI generation button
+                    generateSummaryBtn.onclick = () => generateSummary(name, email, topic, date, time);
+                    
+                    // Update the bookings list
+                    renderBookings();
+                    
+                    // Clear the form
+                    bookingForm.reset();
+                } else {
+                    // Show error message if fields are empty
+                    bookingMessage.textContent = 'Please fill out all required fields.';
+                    bookingMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+                    bookingMessage.classList.add('bg-red-100', 'text-red-700');
+                }
+            });
+            
+            // Handle contact form submission
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const name = document.getElementById('contact-name').value;
+                const email = document.getElementById('contact-email').value;
+                const subject = document.getElementById('contact-subject').value;
+                const message = document.getElementById('contact-message').value;
+
+                if (name && email && subject && message) {
+                    contactMessageStatus.textContent = 'Thank you for your message! We will get back to you shortly.';
+                    contactMessageStatus.classList.remove('hidden', 'bg-red-100', 'text-red-700');
+                    contactMessageStatus.classList.add('bg-green-100', 'text-green-700');
+                    contactForm.reset();
+                } else {
+                    contactMessageStatus.textContent = 'Please fill out all required fields.';
+                    contactMessageStatus.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+                    contactMessageStatus.classList.add('bg-red-100', 'text-red-700');
+                }
+            });
+
+            // Initial render
+            renderBookings();
+        });
+    </script>
+</body>
+</html>
 
