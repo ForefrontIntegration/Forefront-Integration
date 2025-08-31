@@ -13,9 +13,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // IMPORTANT: Global variables are automatically provided by the Canvas environment.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -42,7 +41,6 @@
         const errorContainer = document.getElementById('error-container');
         const errorMessage = document.getElementById('error-message');
 
-        // Main function to initialize Firebase and set up auth listener
         async function initializeFirebase() {
             if (!firebaseConfig) {
                 showError("Firebase configuration is not available.");
@@ -62,16 +60,13 @@
                     await signInAnonymously(auth);
                 }
 
-                // Listen for authentication state changes
                 onAuthStateChanged(auth, async (user) => {
                     if (user && user.isAnonymous === false) {
                         userId = user.uid;
                         userDisplayId.textContent = userId;
-                        // Get user data from Firestore
                         await fetchUserData(userId);
                         showLoggedInState();
                     } else {
-                        // User is signed out or anonymous
                         userId = auth.currentUser.uid;
                         userDisplayId.textContent = userId;
                         userSubscription = 'None';
@@ -88,15 +83,11 @@
             }
         }
 
-        // Fetch user data from Firestore and subscribe to real-time updates
         async function fetchUserData(uid) {
             const userDocPath = `/artifacts/${appId}/users/${uid}/profile/data`;
             const docRef = doc(db, userDocPath);
 
-            // Set up a real-time listener
-            if (unsubscribeFromFirestore) {
-                unsubscribeFromFirestore(); // Clean up previous listener
-            }
+            if (unsubscribeFromFirestore) unsubscribeFromFirestore();
 
             unsubscribeFromFirestore = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
@@ -104,7 +95,6 @@
                     userSubscription = userData.subscription || 'None';
                     renderUIForSubscription(userSubscription);
                 } else {
-                    // Document doesn't exist, create a default one
                     userSubscription = 'None';
                     setDoc(docRef, { subscription: 'None', email: auth.currentUser.email });
                     renderUIForSubscription('None');
@@ -115,7 +105,6 @@
             });
         }
 
-        // Render UI based on authentication state
         function showLoggedInState() {
             loggedInContainer.classList.remove('hidden');
             loggedOutContainer.classList.add('hidden');
@@ -129,15 +118,11 @@
             renderUIForSubscription('None');
         }
 
-        // Render UI based on subscription tier
         function renderUIForSubscription(tier) {
             subscriptionTierDisplay.textContent = tier;
-            
-            // First, hide all pages and links
             Object.values(contentPages).forEach(page => page.classList.add('hidden'));
             pageLinks.forEach(link => link.classList.add('hidden'));
 
-            // Then, show the correct pages and links based on the tier
             switch (tier) {
                 case 'Tier 3':
                     document.getElementById('link-page-3').classList.remove('hidden');
@@ -155,28 +140,18 @@
             }
         }
 
-        // Handle page link clicks
         pageLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetPageId = e.target.dataset.target;
-                
-                // Hide all pages
                 Object.values(contentPages).forEach(page => page.classList.add('hidden'));
-                
-                // Show the target page
                 const targetPage = document.getElementById(targetPageId);
-                if (targetPage) {
-                    targetPage.classList.remove('hidden');
-                }
+                if (targetPage) targetPage.classList.remove('hidden');
             });
         });
 
-        // Handle sign-up form submission (FIXED IDs)
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log("Attempting to create user...");
-
             const email = document.getElementById('register-email').value;
             const password = document.getElementById('register-password').value;
             const subscription = document.getElementById('subscription-tier').value;
@@ -188,17 +163,14 @@
                 await setDoc(userDocRef, { subscription: subscription, email: email, createdAt: new Date() });
                 registerForm.reset();
                 showError('', false);
-                console.log("User registered and data saved to Firestore:", uid);
             } catch (error) {
                 console.error("Registration error:", error);
                 showError(error.message);
             }
         });
 
-        // Handle login form submission (FIXED IDs)
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
@@ -212,7 +184,6 @@
             }
         });
 
-        // Handle logout button click
         document.getElementById('logout-btn').addEventListener('click', async () => {
             try {
                 await signOut(auth);
@@ -223,7 +194,6 @@
             }
         });
 
-        // Error message handling
         function showError(message, isError = true) {
             errorMessage.textContent = message;
             if (isError && message) {
@@ -233,42 +203,88 @@
             }
         }
 
-        // Initialize the app on page load
         initializeFirebase();
 
-        // Scroll to the forms section
         document.getElementById('get-started-btn').addEventListener('click', () => {
             document.getElementById('forms-section').scrollIntoView({ behavior: 'smooth' });
         });
     </script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        .gradient-bg {
-            background-color: #1a202c;
-            background-image: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
-        }
-
-        .btn-primary {
-            @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
-        }
-        
-        .btn-secondary {
-            @apply bg-transparent text-gray-400 font-semibold py-3 px-6 rounded-xl border border-gray-400 shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-gray-400 hover:text-white;
-        }
-
-        .nav-link {
-            @apply text-gray-400 hover:text-yellow-400 transition duration-300;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background-color: #1a202c; background-image: linear-gradient(180deg, #1a202c 0%, #2d3748 100%); }
+        .btn-primary { @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600; }
+        .btn-secondary { @apply bg-transparent text-gray-400 font-semibold py-3 px-6 rounded-xl border border-gray-400 shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-gray-400 hover:text-white; }
+        .nav-link { @apply text-gray-400 hover:text-yellow-400 transition duration-300; }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200">
-    <!-- Navigation Bar -->
-    ...
-    <!-- (The rest of your HTML remains unchanged) -->
+    <nav class="flex justify-between items-center py-6 px-8 bg-gray-800 shadow-md">
+        <div class="text-2xl font-bold text-yellow-400">Forefront Integration</div>
+        <div class="space-x-6">
+            <a href="#" class="nav-link">Home</a>
+            <a href="#forms-section" class="nav-link">Login / Signup</a>
+        </div>
+    </nav>
+
+    <section class="text-center py-20 gradient-bg">
+        <h1 class="text-5xl font-extrabold mb-6 text-yellow-400">Welcome UGC Creators</h1>
+        <p class="text-xl mb-8 text-gray-300">Empowering creators with AI tools tailored to your subscription tier.</p>
+        <button id="get-started-btn" class="btn-primary">Get Started</button>
+    </section>
+
+    <section id="forms-section" class="py-20 px-6 md:px-20">
+        <div id="error-container" class="hidden bg-red-600 text-white p-4 rounded-lg mb-6">
+            <span id="error-message"></span>
+        </div>
+
+        <div id="logged-out-container">
+            <h2 class="text-3xl font-bold mb-6 text-yellow-400">Register</h2>
+            <form id="register-form" class="mb-12 space-y-4">
+                <input type="email" id="register-email" placeholder="Email" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600">
+                <input type="password" id="register-password" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600">
+                <select id="subscription-tier" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600">
+                    <option value="Tier 1">Tier 1</option>
+                    <option value="Tier 2">Tier 2</option>
+                    <option value="Tier 3">Tier 3</option>
+                </select>
+                <button type="submit" class="btn-primary w-full">Sign Up</button>
+            </form>
+
+            <h2 class="text-3xl font-bold mb-6 text-yellow-400">Login</h2>
+            <form id="login-form" class="space-y-4">
+                <input type="email" id="login-email" placeholder="Email" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600">
+                <input type="password" id="login-password" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-600">
+                <button type="submit" class="btn-secondary w-full">Login</button>
+            </form>
+        </div>
+
+        <div id="logged-in-container" class="hidden">
+            <h2 class="text-3xl font-bold mb-4 text-yellow-400">Welcome Back</h2>
+            <p>Email: <span id="user-email"></span></p>
+            <p>User ID: <span id="user-id-display"></span></p>
+            <p>Subscription: <span id="subscription-tier"></span></p>
+            <button id="logout-btn" class="btn-secondary mt-6">Logout</button>
+
+            <div id="tiers-container" class="mt-10">
+                <a id="link-page-1" data-target="hidden-page-1" class="page-link hidden btn-primary block mb-4">Tier 1 Page</a>
+                <a id="link-page-2" data-target="hidden-page-2" class="page-link hidden btn-primary block mb-4">Tier 2 Page</a>
+                <a id="link-page-3" data-target="hidden-page-3" class="page-link hidden btn-primary block">Tier 3 Page</a>
+                <div id="tiers-container-placeholder" class="hidden text-gray-400">Upgrade to unlock more features!</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="hidden-page-1" class="hidden p-10 bg-gray-800 rounded-lg shadow-lg m-6">
+        <h3 class="text-2xl font-bold text-yellow-400 mb-4">Tier 1 Content</h3>
+        <p class="text-gray-300">Exclusive tools for Tier 1 creators.</p>
+    </section>
+    <section id="hidden-page-2" class="hidden p-10 bg-gray-800 rounded-lg shadow-lg m-6">
+        <h3 class="text-2xl font-bold text-yellow-400 mb-4">Tier 2 Content</h3>
+        <p class="text-gray-300">Advanced tools for Tier 2 creators.</p>
+    </section>
+    <section id="hidden-page-3" class="hidden p-10 bg-gray-800 rounded-lg shadow-lg m-6">
+        <h3 class="text-2xl font-bold text-yellow-400 mb-4">Tier 3 Content</h3>
+        <p class="text-gray-300">Premium AI tools for Tier 3 creators.</p>
+    </section>
 </body>
 </html>
