@@ -17,15 +17,7 @@
 
         // IMPORTANT: Global variables are automatically provided by the Canvas environment.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = {
-          apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
-          authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
-          projectId: "forefront-ugc-subscriptions",
-          storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
-          messagingSenderId: "988222732912",
-          appId: "1:988222732912:web:151a0b709106dfc67692b5",
-          measurementId: "G-ZXHZ4T2VKS"
-        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let auth, db;
@@ -183,6 +175,7 @@
         // Handle sign-up form submission
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log("Attempting to create user...");
             const email = e.target.email.value;
             const password = e.target.password.value;
             const subscription = document.getElementById('subscription-tier').value;
