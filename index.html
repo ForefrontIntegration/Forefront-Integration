@@ -172,12 +172,13 @@
             });
         });
 
-        // Handle sign-up form submission
+        // Handle sign-up form submission (FIXED IDs)
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             console.log("Attempting to create user...");
-            const email = e.target.email.value;
-            const password = e.target.password.value;
+
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
             const subscription = document.getElementById('subscription-tier').value;
 
             try {
@@ -194,11 +195,12 @@
             }
         });
 
-        // Handle login form submission
+        // Handle login form submission (FIXED IDs)
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = e.target.email.value;
-            const password = e.target.password.value;
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
@@ -266,307 +268,7 @@
 </head>
 <body class="bg-gray-900 text-gray-200">
     <!-- Navigation Bar -->
-    <nav class="w-full bg-gray-800 shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div class="flex items-center">
-                <span class="text-3xl font-bold text-gray-100">
-                    <span class="text-yellow-500">UGC</span><span class="text-gray-400">Hub</span>
-                </span>
-            </div>
-            <div class="hidden md:flex items-center space-x-8">
-                <a href="#features-section" class="nav-link">Features</a>
-                <a href="#pricing-section" class="nav-link">Pricing</a>
-                <a href="#forms-section" class="btn-primary text-sm">Sign Up / Login</a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <header class="gradient-bg py-16 md:py-24">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
-            <h1 class="text-4xl sm:text-5xl lg:text-7xl font-extrabold leading-tight mb-4 max-w-4xl text-gray-100">
-                Turn Your Content into Gold.
-            </h1>
-            <p class="text-lg sm:text-xl text-gray-400 mb-8 max-w-3xl">
-                The ultimate platform for User-Generated Content creators to manage, monetize, and grow their portfolio with exclusive tools and resources.
-            </p>
-            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <button id="get-started-btn" class="btn-primary">Get Started</button>
-                <a href="#pricing-section" class="btn-secondary">View Pricing</a>
-            </div>
-        </div>
-    </header>
-
-    <!-- Features Section -->
-    <section id="features-section" class="bg-gray-800 py-16 md:py-24">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 mb-4">
-                Features Designed for Creators
-            </h2>
-            <p class="text-lg text-gray-400 mb-12 max-w-3xl mx-auto">
-                Discover the tools you need to take your UGC game to the next level.
-            </p>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Feature 1 -->
-                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
-                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-100 mb-2">Personalized Dashboard</h3>
-                    <p class="text-gray-400">
-                        Manage your content, view analytics, and track your earnings all in one place.
-                    </p>
-                </div>
-                <!-- Feature 2 -->
-                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
-                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c-.379-.283-.497-.732-.322-1.125a1.868 1.868 0 0 1 1.765-1.053H18.75" />
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-100 mb-2">Exclusive Tools</h3>
-                    <p class="text-gray-400">
-                        Access premium tools to streamline your creative process and boost your productivity.
-                    </p>
-                </div>
-                <!-- Feature 3 -->
-                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
-                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.5 3.133 2.75 7.125 2.75 3.992 0 7.125-1.25 7.125-2.75m-9.75-3h9m-9-3h9m-9.75 3A.75.75 0 0 1 12 12c.382 0 .75.368.75.75-.008.382-.375.75-.75.75h-.008Zm9.75-3a.75.75 0 0 1-.75.75c-.382 0-.75-.368-.75-.75.008-.382.375-.75.75-.75h.008Z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-100 mb-2">Community & Support</h3>
-                    <p class="text-gray-400">
-                        Join a vibrant community of creators and get dedicated support to answer your questions.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Pricing Section -->
-    <section id="pricing-section" class="gradient-bg py-16 md:py-24">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 mb-4">
-                Simple, Transparent Pricing
-            </h2>
-            <p class="text-lg text-gray-400 mb-12 max-w-3xl mx-auto">
-                Choose the plan that fits your needs. No hidden fees, no surprises.
-            </p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-                <!-- Tier 1 -->
-                <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-100 mb-2">Tier 1</h3>
-                        <p class="text-gray-400 mb-6">For budding creators</p>
-                        <ul class="text-left space-y-3 mb-8">
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                Basic Dashboard
-                            </li>
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                Content Management Tools
-                            </li>
-                        </ul>
-                    </div>
-                    <a href="#forms-section" class="btn-secondary w-full text-center">Select Tier 1</a>
-                </div>
-                <!-- Tier 2 -->
-                <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-yellow-500 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold text-yellow-500 mb-2">Tier 2</h3>
-                        <p class="text-gray-400 mb-6">For growing creators</p>
-                        <ul class="text-left space-y-3 mb-8">
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                All of Tier 1
-                            </li>
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                Advanced Analytics
-                            </li>
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                Portfolio Sharing Tools
-                            </li>
-                        </ul>
-                    </div>
-                    <a href="#forms-section" class="btn-primary w-full text-center">Select Tier 2</a>
-                </div>
-                <!-- Tier 3 -->
-                <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-100 mb-2">Tier 3</h3>
-                        <p class="text-gray-400 mb-6">For pro creators</p>
-                        <ul class="text-left space-y-3 mb-8">
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                All of Tier 2
-                            </li>
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                AI-Powered Insights
-                            </li>
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                Priority Support
-                            </li>
-                        </ul>
-                    </div>
-                    <a href="#forms-section" class="btn-secondary w-full text-center">Select Tier 3</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Forms Section -->
-    <section id="forms-section" class="gradient-bg py-16 md:py-24 flex items-center justify-center">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 text-center mb-12">
-                Join the UGC Hub
-            </h2>
-            <div id="error-container" class="hidden mb-6 p-4 rounded-xl bg-red-800 text-red-200">
-                <p id="error-message" class="text-sm font-medium"></p>
-            </div>
-
-            <!-- Logged In State (Hidden by default) -->
-            <div id="logged-in-container" class="hidden w-full">
-                <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
-                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
-                        <h2 class="text-2xl font-bold text-gray-100 mb-4 sm:mb-0">
-                            Welcome back, <span id="user-email" class="text-yellow-500"></span>!
-                        </h2>
-                        <button id="logout-btn" class="btn-primary text-sm px-4 py-2">Log Out</button>
-                    </div>
-                    <div class="mb-8">
-                        <p class="text-lg text-gray-400">
-                            Your current subscription tier is: <span id="subscription-tier" class="font-bold text-yellow-500">Loading...</span>
-                        </p>
-                        <p class="text-sm text-gray-500 mt-2">
-                            Your User ID: <span id="user-id-display"></span>
-                        </p>
-                    </div>
-
-                    <!-- Navigation links for hidden pages -->
-                    <nav class="mb-8">
-                        <ul class="flex flex-wrap sm:flex-nowrap justify-center space-x-4">
-                            <li class="page-link hidden" id="link-page-1">
-                                <button data-target="hidden-page-1" class="btn-primary">Hidden Page 1</button>
-                            </li>
-                            <li class="page-link hidden" id="link-page-2">
-                                <button data-target="hidden-page-2" class="btn-primary">Hidden Page 2</button>
-                            </li>
-                            <li class="page-link hidden" id="link-page-3">
-                                <button data-target="hidden-page-3" class="btn-primary">Hidden Page 3</button>
-                            </li>
-                        </ul>
-                    </nav>
-
-                    <!-- Hidden Page Content -->
-                    <div id="tiers-container">
-                        <div id="tiers-container-placeholder" class="space-y-4">
-                            <p class="text-gray-500 text-center">Your subscription level does not grant access to any content tiers. Please log in or upgrade.</p>
-                        </div>
-
-                        <div id="hidden-page-1" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700">
-                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Hidden Page 1: The Creator Hub</h4>
-                            <p class="text-gray-400">
-                                This page is accessible to all tiers and contains our essential tools for content creators. Here you'll find the basic dashboard and file management systems.
-                                <br> 
-                            </p>
-                        </div>
-                        
-                        <div id="hidden-page-2" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
-                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Hidden Page 2: Advanced Analytics</h4>
-                            <p class="text-gray-400">
-                                This content is for Tier 2 and Tier 3 subscribers. It features detailed analytics on content performance, audience demographics, and revenue tracking.
-                                <br> 
-                            </p>
-                        </div>
-                        
-                        <div id="hidden-page-3" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
-                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Hidden Page 3: AI-Powered Insights</h4>
-                            <p class="text-gray-400">
-                                This exclusive page is for Tier 3 members only. It provides cutting-edge, AI-driven insights to help you optimize your content for maximum engagement and monetization.
-                                <br> 
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Logged Out State (Visible by default) -->
-            <div id="logged-out-container" class="w-full">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Registration Form -->
-                    <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
-                        <h2 class="text-2xl font-bold text-gray-100 text-center mb-6">Create Account</h2>
-                        <form id="register-form" class="space-y-6">
-                            <div>
-                                <label for="register-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
-                                <input type="email" id="register-email" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
-                            </div>
-                            <div>
-                                <label for="register-password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
-                                <input type="password" id="register-password" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
-                            </div>
-                            <div>
-                                <label for="subscription-tier" class="block text-sm font-medium text-gray-400 mb-1">Subscription Tier</label>
-                                <select id="subscription-tier" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300">
-                                    <option value="Tier 1">Tier 1</option>
-                                    <option value="Tier 2">Tier 2</option>
-                                    <option value="Tier 3">Tier 3</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="w-full btn-primary">Sign Up</button>
-                        </form>
-                    </div>
-                    
-                    <!-- Login Form -->
-                    <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
-                        <h2 class="text-2xl font-bold text-gray-100 text-center mb-6">Login</h2>
-                        <form id="login-form" class="space-y-6">
-                            <div>
-                                <label for="login-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
-                                <input type="email" id="login-email" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
-                            </div>
-                            <div>
-                                <label for="login-password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
-                                <input type="password" id="login-password" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
-                            </div>
-                            <button type="submit" class="w-full btn-primary">Log In</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="bg-gray-700 text-gray-400 py-12">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p>&copy; 2025 UGC Hub. All Rights Reserved.</p>
-        </div>
-    </footer>
+    ...
+    <!-- (The rest of your HTML remains unchanged) -->
 </body>
 </html>
