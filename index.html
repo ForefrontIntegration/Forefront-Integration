@@ -11,12 +11,21 @@
     <script type="module">
         // Import the necessary Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // IMPORTANT: Global variables are automatically provided by the Canvas environment.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const firebaseConfig = {
+          apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
+          authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
+          projectId: "forefront-ugc-subscriptions",
+          storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
+          messagingSenderId: "988222732912",
+          appId: "1:988222732912:web:151a0b709106dfc67692b5",
+          measurementId: "G-ZXHZ4T2VKS"
+        };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let auth, db;
@@ -50,6 +59,7 @@
 
             try {
                 const app = initializeApp(firebaseConfig);
+                const analytics = getAnalytics(app);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 setLogLevel('debug');
