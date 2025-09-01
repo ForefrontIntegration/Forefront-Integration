@@ -29,18 +29,17 @@
         // This variable is no longer a placeholder, but you can hardcode a unique value
         // if you want to use public data storage.
         const appId = "ugc-hub-app";
+        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
+        const firebaseCustomConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
 
         let auth, db;
         let userId = '';
-        let userSubscription = 'None';
-        let unsubscribeFromFirestore = null;
 
         // UI Elements
         const loggedInContainer = document.getElementById('logged-in-container');
         const loggedOutContainer = document.getElementById('logged-out-container');
         const userEmailDisplay = document.getElementById('user-email');
         const userDisplayId = document.getElementById('user-id-display');
-        const subscriptionTierDisplay = document.getElementById('subscription-tier');
         const pageLinks = document.querySelectorAll('.page-link');
         const contentPages = {
             'hidden-page-1': document.getElementById('hidden-page-1'),
@@ -55,14 +54,18 @@
         // Main function to initialize Firebase and set up auth listener
         async function initializeFirebase() {
             try {
-                const app = initializeApp(firebaseConfig);
+                const app = initializeApp(firebaseCustomConfig);
                 const analytics = getAnalytics(app);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 setLogLevel('debug');
 
                 // Sign in anonymously to start, user can then log in or sign up
-                await signInAnonymously(auth);
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
                 // Listen for authentication state changes
                 onAuthStateChanged(auth, async (user) => {
@@ -76,10 +79,6 @@
                         // User is signed out or anonymous
                         userId = auth.currentUser.uid;
                         userDisplayId.textContent = userId;
-                        userSubscription = 'None';
-                        if (unsubscribeFromFirestore) {
-                            unsubscribeFromFirestore();
-                        }
                         showLoggedOutState();
                     }
                 });
@@ -90,31 +89,16 @@
             }
         }
 
-        // Fetch user data from Firestore and subscribe to real-time updates
+        // Fetch user data from Firestore
         async function fetchUserData(uid) {
-            const userDocPath = `/artifacts/${appId}/users/${uid}/profile/data`;
+            const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
             const docRef = doc(db, userDocPath);
+            const docSnap = await getDoc(docRef);
 
-            // Set up a real-time listener
-            if (unsubscribeFromFirestore) {
-                unsubscribeFromFirestore(); // Clean up previous listener
+            if (!docSnap.exists()) {
+                // Document doesn't exist, create a default one
+                await setDoc(docRef, { email: auth.currentUser.email });
             }
-
-            unsubscribeFromFirestore = onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const userData = docSnap.data();
-                    userSubscription = userData.subscription || 'None';
-                    renderUIForSubscription(userSubscription);
-                } else {
-                    // Document doesn't exist, create a default one
-                    userSubscription = 'None';
-                    setDoc(docRef, { subscription: 'None', email: auth.currentUser.email });
-                    renderUIForSubscription('None');
-                }
-            }, (error) => {
-                console.error("Error fetching user data:", error);
-                showError("Failed to retrieve user data. Please try again.");
-            });
         }
 
         // Render UI based on authentication state
@@ -122,39 +106,19 @@
             loggedInContainer.classList.remove('hidden');
             loggedOutContainer.classList.add('hidden');
             userEmailDisplay.textContent = auth.currentUser.email || 'N/A';
-            renderUIForSubscription(userSubscription);
+            renderLoggedInUI();
         }
 
         function showLoggedOutState() {
             loggedInContainer.classList.add('hidden');
             loggedOutContainer.classList.remove('hidden');
-            renderUIForSubscription('None');
         }
 
-        // Render UI based on subscription tier
-        function renderUIForSubscription(tier) {
-            subscriptionTierDisplay.textContent = tier;
-            
-            // First, hide all pages and links
-            Object.values(contentPages).forEach(page => page.classList.add('hidden'));
-            pageLinks.forEach(link => link.classList.add('hidden'));
-
-            // Then, show the correct pages and links based on the tier
-            switch (tier) {
-                case 'Tier 3':
-                    document.getElementById('link-page-3').classList.remove('hidden');
-                    contentPages['hidden-page-3'].classList.remove('hidden');
-                case 'Tier 2':
-                    document.getElementById('link-page-2').classList.remove('hidden');
-                    contentPages['hidden-page-2'].classList.remove('hidden');
-                case 'Tier 1':
-                    document.getElementById('link-page-1').classList.remove('hidden');
-                    contentPages['hidden-page-1'].classList.remove('hidden');
-                    break;
-                default:
-                    document.getElementById('tiers-container-placeholder').classList.remove('hidden');
-                    break;
-            }
+        // Render UI for logged-in users
+        function renderLoggedInUI() {
+            // Show all hidden pages and links
+            Object.values(contentPages).forEach(page => page.classList.remove('hidden'));
+            pageLinks.forEach(link => link.classList.remove('hidden'));
         }
 
         // Handle page link clicks
@@ -180,13 +144,12 @@
             console.log("Attempting to create user...");
             const email = e.target.email.value;
             const password = e.target.password.value;
-            const subscription = document.getElementById('AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s').value;
 
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const uid = userCredential.user.uid;
-                const userDocRef = doc(db, `/artifacts/${appId}/users/${uid}/profile/data`);
-                await setDoc(userDocRef, { subscription: subscription, email: email, createdAt: new Date() });
+                const userDocRef = doc(db, `/artifacts/${currentAppId}/users/${uid}/profile/data`);
+                await setDoc(userDocRef, { email: email, createdAt: new Date() });
                 registerForm.reset();
                 showError('', false);
                 console.log("User registered and data saved to Firestore:", uid);
@@ -277,7 +240,6 @@
             </div>
             <div class="hidden md:flex items-center space-x-8">
                 <a href="#features-section" class="nav-link">Features</a>
-                <a href="#pricing-section" class="nav-link">Pricing</a>
                 <a href="#forms-section" class="btn-primary text-sm">Sign Up / Login</a>
             </div>
         </div>
@@ -294,7 +256,6 @@
             </p>
             <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                 <button id="get-started-btn" class="btn-primary">Get Started</button>
-                <a href="#pricing-section" class="btn-secondary">View Pricing</a>
             </div>
         </div>
     </header>
@@ -349,98 +310,6 @@
         </div>
     </section>
 
-    <!-- Pricing Section -->
-    <section id="pricing-section" class="gradient-bg py-16 md:py-24">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 mb-4">
-                Simple, Transparent Pricing
-            </h2>
-            <p class="text-lg text-gray-400 mb-12 max-w-3xl mx-auto">
-                Choose the plan that fits your needs. No hidden fees, no surprises.
-            </p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-                <!-- Tier 1 -->
-                <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-100 mb-2">Tier 1</h3>
-                        <p class="text-gray-400 mb-6">For budding creators</p>
-                        <ul class="text-left space-y-3 mb-8">
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                Basic Dashboard
-                            </li>
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                Content Management Tools
-                            </li>
-                        </ul>
-                    </div>
-                    <a href="#forms-section" class="btn-secondary w-full text-center">Select Tier 1</a>
-                </div>
-                <!-- Tier 2 -->
-                <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-yellow-500 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold text-yellow-500 mb-2">Tier 2</h3>
-                        <p class="text-gray-400 mb-6">For growing creators</p>
-                        <ul class="text-left space-y-3 mb-8">
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                All of Tier 1
-                            </li>
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                Advanced Analytics
-                            </li>
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                Portfolio Sharing Tools
-                            </li>
-                        </ul>
-                    </div>
-                    <a href="#forms-section" class="btn-primary w-full text-center">Select Tier 2</a>
-                </div>
-                <!-- Tier 3 -->
-                <div class="bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-100 mb-2">Tier 3</h3>
-                        <p class="text-gray-400 mb-6">For pro creators</p>
-                        <ul class="text-left space-y-3 mb-8">
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                All of Tier 2
-                            </li>
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                AI-Powered Insights
-                            </li>
-                            <li class="flex items-center text-gray-300">
-                                <svg class="w-5 h-5 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 000-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                Priority Support
-                            </li>
-                        </ul>
-                    </div>
-                    <a href="#forms-section" class="btn-secondary w-full text-center">Select Tier 3</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Forms Section -->
     <section id="forms-section" class="gradient-bg py-16 md:py-24 flex items-center justify-center">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
@@ -461,9 +330,6 @@
                         <button id="logout-btn" class="btn-primary text-sm px-4 py-2">Log Out</button>
                     </div>
                     <div class="mb-8">
-                        <p class="text-lg text-gray-400">
-                            Your current subscription tier is: <span id="subscription-tier" class="font-bold text-yellow-500">Loading...</span>
-                        </p>
                         <p class="text-sm text-gray-500 mt-2">
                             Your User ID: <span id="user-id-display"></span>
                         </p>
@@ -486,31 +352,24 @@
 
                     <!-- Hidden Page Content -->
                     <div id="tiers-container">
-                        <div id="tiers-container-placeholder" class="space-y-4">
-                            <p class="text-gray-500 text-center">Your subscription level does not grant access to any content tiers. Please log in or upgrade.</p>
-                        </div>
-
                         <div id="hidden-page-1" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700">
                             <h4 class="font-bold text-yellow-500 text-lg mb-2">Hidden Page 1: The Creator Hub</h4>
                             <p class="text-gray-400">
-                                This page is accessible to all tiers and contains our essential tools for content creators. Here you'll find the basic dashboard and file management systems.
-                                <br> 
+                                This page is accessible to all creators and contains our essential tools for content creation. Here you'll find the basic dashboard and file management systems.
                             </p>
                         </div>
                         
                         <div id="hidden-page-2" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
                             <h4 class="font-bold text-yellow-500 text-lg mb-2">Hidden Page 2: Advanced Analytics</h4>
                             <p class="text-gray-400">
-                                This content is for Tier 2 and Tier 3 subscribers. It features detailed analytics on content performance, audience demographics, and revenue tracking.
-                                <br> 
+                                This content features detailed analytics on content performance, audience demographics, and revenue tracking.
                             </p>
                         </div>
                         
                         <div id="hidden-page-3" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
                             <h4 class="font-bold text-yellow-500 text-lg mb-2">Hidden Page 3: AI-Powered Insights</h4>
                             <p class="text-gray-400">
-                                This exclusive page is for Tier 3 members only. It provides cutting-edge, AI-driven insights to help you optimize your content for maximum engagement and monetization.
-                                <br> 
+                                This exclusive page provides cutting-edge, AI-driven insights to help you optimize your content for maximum engagement and monetization.
                             </p>
                         </div>
                     </div>
@@ -526,24 +385,16 @@
                         <form id="register-form" class="space-y-6">
                             <div>
                                 <label for="register-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
-                                <input type="email" id="register-email" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                                <input type="email" id="register-email" name="email" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
                             </div>
                             <div>
                                 <label for="register-password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
-                                <input type="password" id="register-password" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                                <input type="password" id="register-password" name="password" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
                             </div>
-                            <div>
-                                <label for="subscription-tier" class="block text-sm font-medium text-gray-400 mb-1">Subscription Tier</label>
-                                <select id="subscription-tier" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300">
-                                    <option value="Tier 1">Tier 1</option>
-                                    <option value="Tier 2">Tier 2</option>
-                                    <option value="Tier 3">Tier 3</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="w-full btn-primary">Sign Up</button>
+                            <button type="submit" class="w-full btn-primary mt-6">Register</button>
                         </form>
                     </div>
-                    
+
                     <!-- Login Form -->
                     <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
                         <h2 class="text-2xl font-bold text-gray-100 text-center mb-6">Login</h2>
@@ -556,19 +407,12 @@
                                 <label for="login-password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
                                 <input type="password" id="login-password" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
                             </div>
-                            <button type="submit" class="w-full btn-primary">Log In</button>
+                            <button type="submit" class="w-full btn-primary mt-6">Log In</button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Footer -->
-    <footer class="bg-gray-700 text-gray-400 py-12">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p>&copy; 2025 UGC Hub. All Rights Reserved.</p>
-        </div>
-    </footer>
 </body>
 </html>
