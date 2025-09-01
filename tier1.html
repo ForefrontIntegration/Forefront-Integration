@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Creator Accounts - Tier 1</title>
+    <title>Creator Accounts - Tier 1 Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -74,7 +74,7 @@
                 console.error("Logout error:", error);
             }
         });
-
+        
         initializeFirebase();
     </script>
     <style>
@@ -85,8 +85,8 @@
         }
 
         .gradient-bg {
-            background-color: #1a202c;
-            background-image: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
+            background-color: #0b1a20;
+            background-image: linear-gradient(180deg, #1b262c 0%, #0b1a20 100%);
         }
 
         .btn-primary {
@@ -96,23 +96,36 @@
 </head>
 <body class="bg-gray-900 text-gray-200">
     <div class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-4xl w-full space-y-8 text-center">
+        <div class="max-w-4xl w-full space-y-8">
             <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
-                <h1 class="text-3xl font-extrabold text-gray-100 sm:text-4xl mb-4">
-                    Welcome to the <span class="text-yellow-500">Tier 1 Dashboard</span>
-                </h1>
-                <p class="text-lg text-gray-400 mb-6">
-                    You have access to the essential tools and resources.
-                </p>
-                <div class="flex flex-col items-center mb-6">
-                    <p class="text-sm text-gray-500 mt-2">
-                        Logged in as: <span id="user-email" class="text-gray-300"></span>
-                    </p>
-                    <p class="text-sm text-gray-500 mt-2">
-                        Your User ID: <span id="user-id-display" class="text-gray-300"></span>
-                    </p>
+                <div class="flex flex-col sm:flex-row items-center justify-between mb-8">
+                    <h1 class="text-3xl font-extrabold text-gray-100 sm:text-4xl">
+                        <span class="text-yellow-500">Tier 1</span> Dashboard
+                    </h1>
+                    <div class="flex flex-col items-center mt-4 sm:mt-0">
+                        <p class="text-sm text-gray-500 mt-2">
+                            Logged in as: <span id="user-email" class="text-gray-300"></span>
+                        </p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            Your User ID: <span id="user-id-display" class="text-gray-300"></span>
+                        </p>
+                        <button id="logout-btn" class="btn-primary mt-4 text-sm px-4 py-2">Log Out</button>
+                    </div>
                 </div>
-                <button id="logout-btn" class="btn-primary">Log Out</button>
+
+                <hr class="border-t-2 border-gray-700 my-8">
+
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-gray-100 text-center">
+                        <span class="text-pink-400">Research & Outreach</span> Agent
+                    </h2>
+                    <p class="text-center text-gray-400 mb-8">
+                        This agent researches companies and creates email drafts for you.
+                    </p>
+                    <div class="w-full h-[600px] rounded-xl overflow-hidden border border-gray-700">
+                        <iframe src="https://app.relevanceai.com/agents/bcbe5a/2bf5cc2a-7929-4eda-84d0-8c3c9fa9fbfb/7302844c-15b5-4e6c-a9f4-7c162fd2afd4/share?hide_tool_steps=false&hide_file_uploads=false&hide_conversation_list=false&bubble_style=agent&primary_color=%23685FFF&bubble_icon=pd%2Fchat&input_placeholder_text=Type+your+message...&hide_logo=false&hide_description=false" width="100%" height="100%" frameborder="0" allow="microphone"></iframe>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
