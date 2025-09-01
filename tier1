@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator Accounts - Tier 1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        // Import the necessary Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
+            authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
+            projectId: "forefront-ugc-subscriptions",
+            storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
+            messagingSenderId: "988222732912",
+            appId: "1:988222732912:web:151a0b709106dfc67692b5",
+            measurementId: "G-ZXHZ4T2VKS"
+        };
+        
+        const appId = "ugc-hub-app";
+        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
+        const firebaseCustomConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+
+        let auth, db;
+        let userId = '';
+
+        const userEmailDisplay = document.getElementById('user-email');
+        const userDisplayId = document.getElementById('user-id-display');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseCustomConfig);
+                const analytics = getAnalytics(app);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                setLogLevel('debug');
+
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user && user.isAnonymous === false) {
+                        userId = user.uid;
+                        userDisplayId.textContent = userId;
+                        userEmailDisplay.textContent = user.email || 'N/A';
+                    } else {
+                        // Redirect to login page if not logged in
+                        window.location.href = './index.html';
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization or auth error:", error);
+            }
+        }
+
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = './index.html';
+            } catch (error) {
+                console.error("Logout error:", error);
+            }
+        });
+
+        initializeFirebase();
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .gradient-bg {
+            background-color: #1a202c;
+            background-image: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
+        }
+
+        .btn-primary {
+            @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl w-full space-y-8 text-center">
+            <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+                <h1 class="text-3xl font-extrabold text-gray-100 sm:text-4xl mb-4">
+                    Welcome to the <span class="text-yellow-500">Tier 1 Dashboard</span>
+                </h1>
+                <p class="text-lg text-gray-400 mb-6">
+                    You have access to the essential tools and resources.
+                </p>
+                <div class="flex flex-col items-center mb-6">
+                    <p class="text-sm text-gray-500 mt-2">
+                        Logged in as: <span id="user-email" class="text-gray-300"></span>
+                    </p>
+                    <p class="text-sm text-gray-500 mt-2">
+                        Your User ID: <span id="user-id-display" class="text-gray-300"></span>
+                    </p>
+                </div>
+                <button id="logout-btn" class="btn-primary">Log Out</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
