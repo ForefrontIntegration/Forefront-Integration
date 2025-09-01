@@ -45,24 +45,16 @@
                 db = getFirestore(app);
                 setLogLevel('debug');
 
-                // Sign in anonymously to start, user can then log in or sign up
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
+                // We don't need to sign in here. The onAuthStateChanged listener will handle the session.
                 onAuthStateChanged(auth, async (user) => {
-                    // Only update the UI if a non-anonymous user is authenticated
+                    // Check if a permanent, non-anonymous user is authenticated
                     if (user && user.isAnonymous === false) {
                         userId = user.uid;
                         userDisplayId.textContent = userId;
                         userEmailDisplay.textContent = user.email || 'N/A';
                     } else {
-                        // User is signed out or an anonymous account.
-                        // Do not redirect to avoid a logout loop. The main page handles login.
-                        userDisplayId.textContent = 'Not logged in';
-                        userEmailDisplay.textContent = 'N/A';
+                        // If no valid user session is found, redirect to the login page
+                        window.location.href = './index.html';
                     }
                 });
             } catch (error) {
