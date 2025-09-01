@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator Accounts - Create Account</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        // Import the necessary Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
+            authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
+            projectId: "forefront-ugc-subscriptions",
+            storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
+            messagingSenderId: "988222732912",
+            appId: "1:988222732912:web:151a0b709106dfc67692b5",
+            measurementId: "G-ZXHZ4T2VKS"
+        };
+        
+        const appId = "ugc-hub-app";
+        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
+        const firebaseCustomConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+
+        let auth, db;
+        let userId = '';
+
+        // UI Elements
+        const registerForm = document.getElementById('register-form');
+        const errorContainer = document.getElementById('error-container');
+        const errorMessage = document.getElementById('error-message');
+
+        // Main function to initialize Firebase and set up auth listener
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseCustomConfig);
+                const analytics = getAnalytics(app);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                setLogLevel('debug');
+
+                // Sign in anonymously to start, user can then log in or sign up
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+            } catch (error) {
+                console.error("Firebase initialization or auth error:", error);
+                showError("Failed to initialize the application. Please check the console for details.");
+            }
+        }
+
+        // Handle sign-up form submission
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log("Attempting to create user...");
+            const email = e.target.email.value;
+            const password = e.target.password.value;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const uid = userCredential.user.uid;
+                const userDocRef = doc(db, `/artifacts/${currentAppId}/users/${uid}/profile/data`);
+                await setDoc(userDocRef, { email: email, createdAt: new Date() });
+                registerForm.reset();
+                showError('', false);
+                console.log("User registered and data saved to Firestore:", uid);
+                // Redirect to login page after successful registration
+                window.location.href = './index.html';
+            } catch (error) {
+                console.error("Registration error:", error);
+                showError(error.message);
+            }
+        });
+
+        // Error message handling
+        function showError(message, isError = true) {
+            errorMessage.textContent = message;
+            if (isError && message) {
+                errorContainer.classList.remove('hidden');
+            } else {
+                errorContainer.classList.add('hidden');
+            }
+        }
+
+        // Initialize the app on page load
+        initializeFirebase();
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .gradient-bg {
+            background-color: #1a202c;
+            background-image: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
+        }
+
+        .btn-primary {
+            @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
+        }
+        
+        .btn-secondary {
+            @apply bg-transparent text-gray-400 font-semibold py-3 px-6 rounded-xl border border-gray-400 shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-gray-400 hover:text-white;
+        }
+
+        .nav-link {
+            @apply text-gray-400 hover:text-yellow-400 transition duration-300;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <!-- Main Content for Signup Page -->
+    <section class="gradient-bg py-16 md:py-24 flex items-center justify-center min-h-screen">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 text-center mb-12">
+                Create an Account
+            </h2>
+            <div id="error-container" class="hidden mb-6 p-4 rounded-xl bg-red-800 text-red-200">
+                <p id="error-message" class="text-sm font-medium"></p>
+            </div>
+
+            <div class="w-full max-w-md mx-auto">
+                <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+                    <h2 class="text-2xl font-bold text-gray-100 text-center mb-6">Create Account</h2>
+                    <form id="register-form" class="space-y-6">
+                        <div>
+                            <label for="register-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                            <input type="email" id="register-email" name="email" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                        </div>
+                        <div>
+                            <label for="register-password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                            <input type="password" id="register-password" name="password" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                        </div>
+                        <button type="submit" class="w-full btn-primary mt-6">Register</button>
+                    </form>
+                    <p class="text-center text-sm text-gray-400 mt-6">
+                        Already have an account? 
+                        <a href="./index.html" class="text-yellow-500 hover:underline">Log In</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
