@@ -7,8 +7,8 @@ import {
 
 // 👇 Replace these values with your actual Firebase config
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_IDAIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6sfirebaseapp.com",
+    apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
+    authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
     projectId: "forefront-ugc-subscriptions",
     storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
     messagingSenderId: "988222732912",
