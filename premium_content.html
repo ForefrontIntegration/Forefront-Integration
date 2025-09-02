@@ -12,7 +12,7 @@
         // Import the necessary Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, setLogLevel, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase configuration and initialization
         const firebaseConfig = {
@@ -32,7 +32,6 @@
         let auth, db;
         let userId = '';
         let userSubscriptionStatus = 'None';
-        let isAuthReady = false;
 
         // UI Elements
         const mainContainer = document.getElementById('main-container');
@@ -55,8 +54,11 @@
                     await signInAnonymously(auth);
                 }
 
+                // Wait for the authentication state to be fully resolved
                 onAuthStateChanged(auth, async (user) => {
-                    isAuthReady = true;
+                    loader.classList.add('hidden');
+                    mainContainer.classList.remove('hidden');
+
                     if (user && user.isAnonymous === false) {
                         userId = user.uid;
                         await fetchSubscriptionStatus(userId);
@@ -67,7 +69,10 @@
 
             } catch (error) {
                 console.error("Firebase initialization or auth error:", error);
-                showError("Failed to initialize the application. Please check the console for details.");
+                // Fallback to showing login required on initialization error
+                loader.classList.add('hidden');
+                mainContainer.classList.remove('hidden');
+                showLoginRequired();
             }
         }
 
@@ -78,44 +83,34 @@
             onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     userSubscriptionStatus = docSnap.data().subscription;
-                    renderUI();
+                    if (userSubscriptionStatus === 'Tier 1') {
+                        showPremiumContent();
+                    } else {
+                        showSubscriptionCTA();
+                    }
                 } else {
                     console.warn("User profile not found. Creating a new one.");
                     setDoc(docRef, { email: auth.currentUser.email, subscription: 'None' });
                     userSubscriptionStatus = 'None';
-                    renderUI();
+                    showSubscriptionCTA();
                 }
             });
         }
 
-        function renderUI() {
-            loader.classList.add('hidden');
-            if (isAuthReady && auth.currentUser && auth.currentUser.isAnonymous === false) {
-                if (userSubscriptionStatus === 'Tier 1') {
-                    showPremiumContent();
-                } else {
-                    showSubscriptionCTA();
-                }
-            } else {
-                showLoginRequired();
-            }
-        }
-
         function showLoginRequired() {
-            mainContainer.classList.remove('hidden');
             loginRequiredMessage.classList.remove('hidden');
             premiumContentContainer.classList.add('hidden');
         }
         
         function showSubscriptionCTA() {
-            mainContainer.classList.remove('hidden');
+            loginRequiredMessage.classList.add('hidden');
             premiumContentContainer.classList.remove('hidden');
             subscriptionMessage.innerHTML = 'Access to this content requires a premium subscription.';
             subscribeBtn.classList.remove('hidden');
         }
 
         function showPremiumContent() {
-            mainContainer.classList.remove('hidden');
+            loginRequiredMessage.classList.add('hidden');
             premiumContentContainer.classList.remove('hidden');
             subscriptionMessage.innerHTML = '<h3 class="font-bold text-lg text-yellow-500 mb-2">Welcome, Tier 1 Subscriber!</h3><p>Enjoy your exclusive AI-powered insights and tools.</p>';
             subscribeBtn.classList.add('hidden');
@@ -131,7 +126,16 @@
                     // Firestore snapshot listener will handle re-rendering the UI
                 } catch (error) {
                     console.error("Error updating subscription:", error);
-                    alert("Failed to update subscription. Please try again.");
+                    // Using a custom modal instead of alert()
+                    const messageBox = document.createElement('div');
+                    messageBox.className = 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-50';
+                    messageBox.innerHTML = `
+                        <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-white max-w-sm w-full text-center">
+                            <p class="mb-4">Failed to update subscription. Please try again.</p>
+                            <button onclick="this.parentNode.parentNode.remove()" class="btn-primary">OK</button>
+                        </div>
+                    `;
+                    document.body.appendChild(messageBox);
                 }
             }
         });
