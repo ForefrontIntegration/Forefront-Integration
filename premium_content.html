@@ -2,46 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>UGC Hub – Premium</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-  </style>
-</head>
-<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center justify-center p-6">
-  
-  <!-- Loader -->
-  <div id="loading" class="text-center space-y-4">
-    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500 mx-auto"></div>
-    <p class="text-gray-400">Checking subscription...</p>
-  </div>
-
-  <!-- Premium Content -->
-  <div id="premium-content" class="hidden max-w-3xl text-center">
-    <h1 class="text-3xl font-bold mb-6">Welcome to Premium</h1>
-    <p class="text-gray-300 mb-8">
-      You are logged in with an active premium subscription 🎉
-    </p>
-    <button id="logoutBtn" class="bg-red-500 text-white px-6 py-3 rounded-xl shadow hover:bg-red-600 transition">
-      Log out
-    </button>
-  </div>
-
-  <!-- Upgrade Message -->
-  <div id="upgrade-message" class="hidden text-center max-w-xl">
-    <h2 class="text-2xl font-bold mb-4">Upgrade Required</h2>
-    <p class="text-gray-400 mb-6">
-      Your account does not have access to this page. Please upgrade your subscription.
-    </p>
-    <a href="./index.html" class="bg-yellow-500 text-gray-900 px-6 py-3 rounded-xl shadow hover:bg-yellow-600 transition">
-      Back to Home
-    </a>
-  </div>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tier 1 Premium Content</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { 
@@ -55,76 +17,102 @@
       getDoc 
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    // --- Firebase config ---
     const firebaseConfig = {
-      apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
-      authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
-      projectId: "forefront-ugc-subscriptions",
-      storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
-      messagingSenderId: "988222732912",
-      appId: "1:988222732912:web:151a0b709106dfc67692b5",
-      measurementId: "G-ZXHZ4T2VKS"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const loadingDiv = document.getElementById("loading");
-    const premiumDiv = document.getElementById("premium-content");
-    const upgradeDiv = document.getElementById("upgrade-message");
-    const logoutBtn = document.getElementById("logoutBtn");
+    // --- Page elements ---
+    const loadingEl = document.addEventListener("DOMContentLoaded", () => {
+      const loadingEl = document.getElementById("loading");
+      const premiumContentEl = document.getElementById("premium-content");
+      const noAccessEl = document.getElementById("no-access");
+      const logoutBtn = document.getElementById("logoutBtn");
 
-    // Auth listener
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        console.log("✅ Logged in:", user.email);
-
-        try {
-          // Fetch subscription data from Firestore
-          const userRef = doc(db, "users", user.uid);
-          const userSnap = await getDoc(userRef);
-
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            console.log("🔑 Subscription data:", data);
-
-            if (data.subscriptionTier === "premium") {
-              // ✅ Show premium content
-              loadingDiv.classList.add("hidden");
-              premiumDiv.classList.remove("hidden");
-            } else {
-              // ❌ Not premium → show upgrade message
-              loadingDiv.classList.add("hidden");
-              upgradeDiv.classList.remove("hidden");
-            }
-          } else {
-            console.warn("No subscription record found.");
-            loadingDiv.classList.add("hidden");
-            upgradeDiv.classList.remove("hidden");
-          }
-        } catch (err) {
-          console.error("Error fetching subscription:", err);
-          loadingDiv.classList.add("hidden");
-          upgradeDiv.classList.remove("hidden");
+      // --- Auth listener ---
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          console.log("❌ No user, redirecting...");
+          setTimeout(() => window.location.href = "./index.html", 500);
+          return;
         }
 
-      } else {
-        console.log("❌ No user, redirecting...");
-        setTimeout(() => {
-          window.location.href = "./index.html";
-        }, 800);
-      }
-    });
+        console.log("✅ User logged in:", user.email);
 
-    // Logout
-    logoutBtn.addEventListener("click", async () => {
-      try {
+        try {
+          // Fetch user profile to check subscription
+          const userRef = doc(
+            db, 
+            "artifacts", 
+            "YOUR_APP_ID", 
+            "users", 
+            user.uid, 
+            "profile", 
+            "data"
+          );
+          const userSnap = await getDoc(userRef);
+
+          if (!userSnap.exists()) {
+            throw new Error("User profile missing");
+          }
+
+          const sub = userSnap.data().subscription || "None";
+          console.log("📦 Subscription tier:", sub);
+
+          if (["Tier 1", "Tier 2", "Tier 3"].includes(sub)) {
+            premiumContentEl.classList.remove("hidden");
+          } else {
+            noAccessEl.classList.remove("hidden");
+          }
+        } catch (err) {
+          console.error("⚠️ Error fetching subscription:", err);
+
+          if (err.code === "permission-denied") {
+            noAccessEl.classList.remove("hidden");
+          } else {
+            alert("Unexpected error loading premium content.");
+          }
+        } finally {
+          loadingEl.classList.add("hidden");
+        }
+      });
+
+      // --- Sign out ---
+      logoutBtn.addEventListener("click", async () => {
         await signOut(auth);
         window.location.href = "./index.html";
-      } catch (err) {
-        console.error("Logout failed:", err);
-      }
+      });
     });
   </script>
+  <style>
+    .hidden { display: none; }
+    body { font-family: sans-serif; margin: 2rem; }
+    h1, h2 { color: #333; }
+    button { padding: 0.5rem 1rem; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <div id="loading" class="text-center p-6">Checking login...</div>
+
+  <div id="premium-content" class="hidden">
+    <h1>Tier 1 Premium Tools</h1>
+    <p>Welcome! You have access to Tier 1 content.</p>
+    <button id="logoutBtn">Log out</button>
+  </div>
+
+  <div id="no-access" class="hidden text-center p-6">
+    <h2>🚫 Access denied</h2>
+    <p>Your account does not have a valid subscription for this page.</p>
+    <a href="./index.html">Return to Home</a>
+  </div>
 </body>
 </html>
