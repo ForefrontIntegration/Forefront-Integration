@@ -117,10 +117,12 @@
                 const userDocPath = `/artifacts/${appId}/users/${userId}/profile/data`;
                 const userRef = doc(db, userDocPath);
                 const userSnap = await getDoc(userRef);
+                const userData = userSnap.data();
 
                 const allowedTiers = ["Tier 1", "Tier 2", "Tier 3"];
-                if (userSnap.exists() && allowedTiers.includes(userSnap.data().subscription)) {
-                    console.log("📦 Subscription tier:", userSnap.data().subscription);
+                // CRITICAL FIX: Check if userData and the subscription field exist before checking the value.
+                if (userSnap.exists() && userData && allowedTiers.includes(userData.subscription)) {
+                    console.log("📦 Subscription tier:", userData.subscription);
                     dashboardContainer.classList.remove("hidden");
                     noAccessEl.classList.add("hidden");
                     fetchTier1Content();
@@ -146,7 +148,6 @@
                 if (querySnapshot.empty) {
                     contentHTML = `<p class="text-center text-gray-500">No exclusive content found. Check back later!</p>`;
                 } else {
-                    queryHTML = '';
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
                         contentHTML += `
