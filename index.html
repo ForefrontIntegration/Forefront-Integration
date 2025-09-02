@@ -2,15 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Forefront Integration</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .hidden { display: none; }
+    .error { color: red; }
+    .premium-link { margin: 5px 0; display: block; }
+  </style>
+</head>
+<body>
+  <h1>Welcome to Forefront Integration</h1>
+
+  <div id="auth-section">
+    <button id="googleLoginBtn">Sign in with Google</button>
+    <button id="logoutBtn" class="hidden">Logout</button>
+  </div>
+
+  <div id="user-info" class="hidden">
+    <p>User ID: <span id="userDisplayId"></span></p>
+    <p>Subscription: <span id="userSubscriptionDisplay"></span></p>
+  </div>
+
+  <div id="premium-links" class="hidden">
+    <h3>Premium Content</h3>
+    <a id="tier1Link" class="premium-link hidden" href="tier1.html">Tier 1 Content</a>
+  </div>
+
+  <div id="error-message" class="error hidden"></div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // ✅ Your real Firebase config
-    const firebaseConfig = {
+    // ✅ Replace with your real Firebase config
+    const firebaseCustomConfig = {
       apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
       authDomain: "www.forefrontintegration.com",
       projectId: "forefront-ugc-subscriptions",
@@ -20,62 +54,123 @@
       measurementId: "G-ZXHZ4T2VKS"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const provider = new GoogleAuthProvider();
+    let auth, db, userId;
+    const currentAppId = "defaultApp";
 
-    async function ensureUserProfile(user) {
-      const userRef = doc(db, "artifacts", "forefront-ugc-subscriptions", "users", user.uid, "profile", "data");
-      const userSnap = await getDoc(userRef);
+    // UI Elements
+    const googleLoginBtn = document.getElementById("googleLoginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const userDisplayId = document.getElementById("userDisplayId");
+    const userSubscriptionDisplay = document.getElementById("userSubscriptionDisplay");
+    const userInfo = document.getElementById("user-info");
+    const premiumLinks = document.getElementById("premium-links");
+    const tier1Link = document.getElementById("tier1Link");
+    const errorMessage = document.getElementById("error-message");
 
-      if (!userSnap.exists()) {
-        await setDoc(userRef, {
-          email: user.email,
-          subscription: "None",   // default until upgraded
-          createdAt: new Date().toISOString()
-        });
-        console.log("🆕 Created new user profile:", user.email);
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.remove("hidden");
+    }
+
+    function clearError() {
+      errorMessage.textContent = "";
+      errorMessage.classList.add("hidden");
+    }
+
+    function showLoggedInState() {
+      googleLoginBtn.classList.add("hidden");
+      logoutBtn.classList.remove("hidden");
+      userInfo.classList.remove("hidden");
+      premiumLinks.classList.remove("hidden");
+    }
+
+    function showLoggedOutState() {
+      googleLoginBtn.classList.remove("hidden");
+      logoutBtn.classList.add("hidden");
+      userInfo.classList.add("hidden");
+      premiumLinks.classList.add("hidden");
+      tier1Link.classList.add("hidden");
+    }
+
+    function renderPremiumLinks(subscription) {
+      if (subscription === "Tier 1") {
+        tier1Link.classList.remove("hidden");
       } else {
-        console.log("✅ Existing profile found:", user.email);
+        tier1Link.classList.add("hidden");
       }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const loginBtn = document.getElementById("loginBtn");
-      const logoutBtn = document.getElementById("logoutBtn");
+    async function initializeFirebase() {
+      try {
+        const app = initializeApp(firebaseCustomConfig);
+        const analytics = getAnalytics(app);
+        auth = getAuth(app);
+        db = getFirestore(app);
 
-      loginBtn.addEventListener("click", async () => {
-        try {
-          const result = await signInWithPopup(auth, provider);
-          await ensureUserProfile(result.user);
-          window.location.href = "./tier1.html";
-        } catch (err) {
-          console.error("Login failed:", err);
-        }
-      });
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            userId = user.uid;
+            userDisplayId.textContent = userId;
+            await fetchUserData(userId);
+            showLoggedInState();
+          } else {
+            showLoggedOutState();
+          }
+        });
 
-      logoutBtn.addEventListener("click", async () => {
+      } catch (error) {
+        console.error("Firebase initialization or auth error:", error);
+        showError("Failed to initialize the application. Please check the console for details.");
+      }
+    }
+
+    async function fetchUserData(uid) {
+      const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
+      const docRef = doc(db, userDocPath);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        const defaultData = {
+          email: auth.currentUser.email || null,
+          subscription: "None",
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(docRef, defaultData);
+        userSubscriptionDisplay.textContent = "None";
+        renderPremiumLinks("None");
+      } else {
+        const userData = docSnap.data();
+        userSubscriptionDisplay.textContent = userData.subscription || "None";
+        renderPremiumLinks(userData.subscription);
+      }
+    }
+
+    async function loginWithGoogle() {
+      clearError();
+      try {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        await fetchUserData(result.user.uid);
+      } catch (error) {
+        console.error("Google login error:", error);
+        showError("Google login failed. Please try again.");
+      }
+    }
+
+    async function logout() {
+      clearError();
+      try {
         await signOut(auth);
-        console.log("User signed out");
-      });
+      } catch (error) {
+        console.error("Logout error:", error);
+        showError("Logout failed. Please try again.");
+      }
+    }
 
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          loginBtn.style.display = "none";
-          logoutBtn.style.display = "inline-block";
-        } else {
-          loginBtn.style.display = "inline-block";
-          logoutBtn.style.display = "none";
-        }
-      });
-    });
+    googleLoginBtn.addEventListener("click", loginWithGoogle);
+    logoutBtn.addEventListener("click", logout);
+
+    initializeFirebase();
   </script>
-</head>
-<body>
-  <h1>Welcome to Forefront Integration</h1>
-  <p>Sign in to access premium tools.</p>
-  <button id="loginBtn">Sign in with Google</button>
-  <button id="logoutBtn" style="display:none;">Log out</button>
 </body>
 </html>
