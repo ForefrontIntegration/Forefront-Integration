@@ -157,7 +157,7 @@
             if (!firebaseConfig) {
                 const errorMessage = "❌ Firebase configuration is invalid or missing. Please ensure it's correctly provided.";
                 console.error(errorMessage);
-                loadingEl.textContent = errorMessage;
+                loadingEl.innerHTML = `<div class="p-4 bg-red-800 rounded-xl border border-red-700"><p class="font-bold text-red-200">❌ Error!</p><p class="text-red-300 mt-2">Firebase configuration is missing or invalid. Please check the project settings.</p></div>`;
                 loadingEl.classList.remove('hidden');
                 return;
             }
@@ -175,7 +175,11 @@
                         await signInWithCustomToken(auth, __initial_auth_token);
                     } catch (error) {
                         console.error("Custom token sign-in failed, falling back to anonymous.", error);
-                        await signInAnonymously(auth);
+                        if (error.code === 'auth/invalid-api-key') {
+                            loadingEl.innerHTML = `<div class="p-4 bg-red-800 rounded-xl border border-red-700"><p class="font-bold text-red-200">❌ Initialization Failed</p><p class="text-red-300 mt-2">The provided Firebase API key is invalid. Please ensure the project settings are correct and try again.</p></div>`;
+                        } else {
+                            await signInAnonymously(auth);
+                        }
                     }
                 } else {
                     await signInAnonymously(auth);
@@ -190,9 +194,12 @@
                     }
                 });
             } catch (e) {
-                const errorMessage = `❌ Firebase initialization failed: ${e.message}`;
+                let errorMessage = `❌ Firebase initialization failed: ${e.message}`;
+                if (e.code === 'auth/invalid-api-key') {
+                    errorMessage = `<div class="p-4 bg-red-800 rounded-xl border border-red-700"><p class="font-bold text-red-200">❌ Initialization Failed</p><p class="text-red-300 mt-2">The provided Firebase API key is invalid. Please ensure the project settings are correct and try again.</p></div>`;
+                }
                 console.error(errorMessage, e);
-                loadingEl.textContent = errorMessage;
+                loadingEl.innerHTML = errorMessage;
                 loadingEl.classList.remove('hidden');
             }
         }
