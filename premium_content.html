@@ -72,7 +72,7 @@
         import { getFirestore, doc, getDoc, collection, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global variables for Firebase
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ugc-hub-app';
         
         // This is the hardcoded configuration from your signup.html file.
         const fallbackFirebaseConfig = {
@@ -146,6 +146,7 @@
                 if (querySnapshot.empty) {
                     contentHTML = `<p class="text-center text-gray-500">No exclusive content found. Check back later!</p>`;
                 } else {
+                    queryHTML = '';
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
                         contentHTML += `
