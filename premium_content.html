@@ -32,6 +32,7 @@
         let auth, db;
         let userId = '';
         let userSubscriptionStatus = 'None';
+        let unsubscribeFromProfile; // Variable to hold the unsubscribe function
 
         // UI Elements
         const mainContainer = document.getElementById('main-container');
@@ -54,18 +55,26 @@
                     await signInAnonymously(auth);
                 }
 
-                // This is the core logic. onAuthStateChanged is the only source of truth.
-                // We wait for a definitive response before showing any content.
+                // onAuthStateChanged is the single source of truth for authentication.
+                // We'll manage all UI state changes from inside this listener.
                 onAuthStateChanged(auth, async (user) => {
-                    loader.classList.add('hidden');
-                    mainContainer.classList.remove('hidden');
-
+                    // First, clean up any old subscription listener
+                    if (unsubscribeFromProfile) {
+                        unsubscribeFromProfile();
+                    }
+                    
                     if (user && user.isAnonymous === false) {
                         userId = user.uid;
-                        await fetchSubscriptionStatus(userId);
+                        // Now that we have a valid, non-anonymous user, fetch their profile
+                        fetchSubscriptionStatus(userId);
                     } else {
+                        // User is not logged in or is anonymous
                         showLoginRequired();
                     }
+
+                    // Hide the loader and show the main container once a user state is determined
+                    loader.classList.add('hidden');
+                    mainContainer.classList.remove('hidden');
                 });
 
             } catch (error) {
@@ -74,11 +83,12 @@
             }
         }
 
-        async function fetchSubscriptionStatus(uid) {
+        function fetchSubscriptionStatus(uid) {
             const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
             const docRef = doc(db, userDocPath);
 
-            onSnapshot(docRef, (docSnap) => {
+            // Use onSnapshot to get real-time updates for the user's profile
+            unsubscribeFromProfile = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     userSubscriptionStatus = docSnap.data().subscription;
                     if (userSubscriptionStatus === 'Tier 1') {
@@ -88,10 +98,14 @@
                     }
                 } else {
                     console.warn("User profile not found. Creating a new one.");
+                    // Create a new profile with a default subscription status
                     setDoc(docRef, { email: auth.currentUser.email, subscription: 'None' });
-                    userSubscriptionStatus = 'None';
                     showSubscriptionCTA();
                 }
+            }, (error) => {
+                // This is a crucial check for permission errors
+                console.error("Error fetching user profile:", error);
+                showLoginRequired();
             });
         }
 
