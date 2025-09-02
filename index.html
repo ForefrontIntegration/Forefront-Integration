@@ -38,13 +38,12 @@
         const loggedOutContainer = document.getElementById('logged-out-container');
         const userEmailDisplay = document.getElementById('user-email');
         const userDisplayId = document.getElementById('user-id-display');
-        const userSubscriptionDisplay = document.getElementById('user-subscription'); // New: User subscription display
-        const subscribeBtn = document.getElementById('subscribe-btn'); // New: Subscribe button
+        const userSubscriptionDisplay = document.getElementById('user-subscription');
+        const subscribeBtn = document.getElementById('subscribe-btn');
         const pageLinks = document.querySelectorAll('.page-link');
         const contentPages = {
             'hidden-page-1': document.getElementById('hidden-page-1'),
-            'hidden-page-2': document.getElementById('hidden-page-2'),
-            'hidden-page-3': document.getElementById('hidden-page-3')
+            'hidden-page-2': document.getElementById('hidden-page-2')
         };
         const loginForm = document.getElementById('login-form');
         const errorContainer = document.getElementById('error-container');
@@ -60,23 +59,19 @@
                 db = getFirestore(app);
                 setLogLevel('debug');
 
-                // Sign in anonymously to start, user can then log in or sign up
                 if (typeof __initial_auth_token !== 'undefined') {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
 
-                // Listen for authentication state changes
                 onAuthStateChanged(auth, async (user) => {
                     if (user && user.isAnonymous === false) {
                         userId = user.uid;
                         userDisplayId.textContent = userId;
-                        // Get user data from Firestore
                         await fetchUserData(userId);
                         showLoggedInState();
                     } else {
-                        // User is signed out or anonymous
                         userId = auth.currentUser.uid;
                         userDisplayId.textContent = userId;
                         showLoggedOutState();
@@ -89,24 +84,20 @@
             }
         }
 
-        // Fetch user data from Firestore
         async function fetchUserData(uid) {
             const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
             const docRef = doc(db, userDocPath);
             const docSnap = await getDoc(docRef);
 
             if (!docSnap.exists()) {
-                // Document doesn't exist, create a default one
                 await setDoc(docRef, { email: auth.currentUser.email, subscription: 'None' });
             } else {
-                // Update UI based on subscription status
                 const userData = docSnap.data();
                 userSubscriptionDisplay.textContent = userData.subscription || 'None';
                 renderPremiumLinks(userData.subscription);
             }
         }
 
-        // Render UI based on authentication state
         function showLoggedInState() {
             loggedInContainer.classList.remove('hidden');
             loggedOutContainer.classList.add('hidden');
@@ -118,34 +109,26 @@
             loggedOutContainer.classList.remove('hidden');
         }
         
-        // New function to update the UI based on subscription tier
         function renderPremiumLinks(subscriptionTier) {
-            // All signed-in users get access to the first two pages
             document.getElementById('link-page-1').classList.remove('hidden');
             document.getElementById('link-page-2').classList.remove('hidden');
 
-            // Only subscribers get access to the Tier 1 dashboard and the third page
             if (subscriptionTier === 'Tier 1') {
-                document.getElementById('link-tier-1').classList.remove('hidden');
-                document.getElementById('link-page-3').classList.remove('hidden');
-                subscribeBtn.classList.add('hidden'); // Hide subscribe button
+                document.getElementById('link-premium-content').classList.remove('hidden');
+                subscribeBtn.classList.add('hidden');
             } else {
-                document.getElementById('link-tier-1').classList.add('hidden');
-                document.getElementById('link-page-3').classList.add('hidden');
-                subscribeBtn.classList.remove('hidden'); // Show subscribe button
+                document.getElementById('link-premium-content').classList.add('hidden');
+                subscribeBtn.classList.remove('hidden');
             }
         }
 
-        // Handle page link clicks
         pageLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetPageId = e.target.dataset.target;
                 
-                // Hide all pages
                 Object.values(contentPages).forEach(page => page.classList.add('hidden'));
                 
-                // Show the target page
                 const targetPage = document.getElementById(targetPageId);
                 if (targetPage) {
                     targetPage.classList.remove('hidden');
@@ -153,7 +136,6 @@
             });
         });
 
-        // Handle login form submission
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = e.target.email.value;
@@ -169,7 +151,6 @@
             }
         });
 
-        // Function to handle Google OAuth flow
         async function connectWithGoogle() {
             const provider = new GoogleAuthProvider();
             try {
@@ -180,25 +161,6 @@
             }
         }
         
-        // New: Simulate a subscription upgrade
-        async function updateSubscription() {
-            try {
-                if (auth.currentUser && auth.currentUser.isAnonymous === false) {
-                    const userDocPath = `/artifacts/${currentAppId}/users/${auth.currentUser.uid}/profile/data`;
-                    const docRef = doc(db, userDocPath);
-                    await updateDoc(docRef, {
-                        subscription: 'Tier 1'
-                    });
-                    // UI will update automatically via onAuthStateChanged
-                    showError("Subscription activated successfully!", false);
-                }
-            } catch (error) {
-                console.error("Subscription update error:", error);
-                showError("Failed to upgrade subscription. Please try again.");
-            }
-        }
-
-        // Handle logout button click
         document.getElementById('logout-btn').addEventListener('click', async () => {
             try {
                 await signOut(auth);
@@ -209,7 +171,6 @@
             }
         });
 
-        // Error message handling
         function showError(message, isError = true) {
             errorMessage.textContent = message;
             if (isError && message) {
@@ -222,16 +183,9 @@
         if (googleSignInBtn) {
             googleSignInBtn.addEventListener('click', connectWithGoogle);
         }
-        
-        // New: Attach event listener to the subscribe button
-        if (subscribeBtn) {
-            subscribeBtn.addEventListener('click', updateSubscription);
-        }
 
-        // Initialize the app on page load
         initializeFirebase();
 
-        // Scroll to the forms section
         document.getElementById('get-started-btn').addEventListener('click', () => {
             document.getElementById('forms-section').scrollIntoView({ behavior: 'smooth' });
         });
@@ -372,9 +326,9 @@
 
                     <!-- Subscription Button -->
                     <div id="subscribe-container">
-                         <button id="subscribe-btn" class="w-full btn-primary mt-6">
+                         <a href="./premium_content.html" id="subscribe-btn" class="w-full btn-primary text-center block mt-6">
                             Subscribe to Tier 1
-                        </button>
+                        </a>
                     </div>
                     
                     <!-- Navigation links for hidden pages and Tier 1 -->
@@ -386,11 +340,8 @@
                             <li class="page-link hidden" id="link-page-2">
                                 <button data-target="hidden-page-2" class="btn-primary">Advanced Analytics</button>
                             </li>
-                            <li class="page-link hidden" id="link-page-3">
-                                <button data-target="hidden-page-3" class="btn-primary">AI-Powered Insights</button>
-                            </li>
-                            <li id="link-tier-1" class="hidden">
-                                <a href="./tier1.html" class="btn-primary">Tier 1 Dashboard</a>
+                            <li id="link-premium-content" class="hidden">
+                                <a href="./premium_content.html" class="btn-primary">AI-Powered Insights (Premium)</a>
                             </li>
                         </ul>
                     </nav>
@@ -408,13 +359,6 @@
                             <h4 class="font-bold text-yellow-500 text-lg mb-2">Advanced Analytics (All Users)</h4>
                             <p class="text-gray-400">
                                 This content features detailed analytics on content performance, audience demographics, and revenue tracking.
-                            </p>
-                        </div>
-                        
-                        <div id="hidden-page-3" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
-                            <h4 class="font-bold text-yellow-500 text-lg mb-2">AI-Powered Insights (Tier 1 Subscribers Only)</h4>
-                            <p class="text-gray-400">
-                                This exclusive page provides cutting-edge, AI-driven insights to help you optimize your content for maximum engagement and monetization.
                             </p>
                         </div>
                     </div>
