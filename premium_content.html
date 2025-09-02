@@ -30,7 +30,7 @@
     <div id="loading" class="text-center p-6 text-xl font-medium">
         Checking login...
     </div>
-
+    
     <div class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl w-full space-y-8">
             <div id="dashboard-container" class="hidden bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
@@ -73,15 +73,7 @@
 
         // Global variables for Firebase
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { /* Your default firebase config here */ };
-        
-        // Initialize Firebase services
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        setLogLevel('debug');
-
-        let userId = '';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' && Object.keys(JSON.parse(__firebase_config)).length > 0 ? JSON.parse(__firebase_config) : null;
 
         // UI elements
         const loadingEl = document.getElementById('loading');
@@ -92,44 +84,51 @@
         const logoutBtn = document.getElementById('logout-btn');
         const tier1ContentEl = document.getElementById('tier-1-content');
 
-        // Handle subscription and UI
-        async function handleAuthState(user) {
-            if (!user) return; // wait for login
+        let auth, db, userId = '';
 
-            console.log("✅ User logged in:", user.email);
+        // This function handles the core logic after Firebase is initialized
+        async function handleAuthState(user) {
+            loadingEl.classList.add('hidden');
+            if (!user) {
+                // No valid authenticated user, redirect to login
+                console.log("❌ No authenticated user, redirecting to login page.");
+                window.location.href = './index.html';
+                return;
+            }
+
+            console.log("✅ User logged in:", user.email || 'Anonymous');
             userId = user.uid;
             userIdDisplay.textContent = userId;
             userEmailDisplay.textContent = user.email || 'N/A';
             
             try {
-                // Fetch user profile doc
-                const userRef = doc(db, "artifacts", appId, "users", userId, "profile", "data");
+                // Fetch user profile to check subscription
+                const userDocPath = `/artifacts/${appId}/users/${userId}/profile/data`;
+                const userRef = doc(db, userDocPath);
                 const userSnap = await getDoc(userRef);
 
                 const allowedTiers = ["Tier 1", "Tier 2", "Tier 3"];
                 if (userSnap.exists() && allowedTiers.includes(userSnap.data().subscription)) {
                     console.log("📦 Subscription tier:", userSnap.data().subscription);
-                    loadingEl.classList.add('hidden');
                     dashboardContainer.classList.remove("hidden");
                     noAccessEl.classList.add("hidden");
                     fetchTier1Content();
                 } else {
                     console.log("⚠️ Access denied. User does not have a required subscription.");
-                    loadingEl.classList.add('hidden');
                     dashboardContainer.classList.add("hidden");
                     noAccessEl.classList.remove("hidden");
                 }
             } catch (err) {
                 console.error("⚠️ Error fetching subscription:", err);
-                loadingEl.classList.add('hidden');
                 dashboardContainer.classList.add("hidden");
                 noAccessEl.classList.remove("hidden");
             }
         }
 
-        // Fetch Tier 1 exclusive content
+        // Fetch Tier 1 exclusive content using a real-time listener
         function fetchTier1Content() {
-            const q = collection(db, "artifacts", appId, "public", "data", "tier1_content");
+            const tier1CollectionPath = `/artifacts/${appId}/public/data/tier1_content`;
+            const q = collection(db, tier1CollectionPath);
             
             onSnapshot(q, (querySnapshot) => {
                 let contentHTML = '';
@@ -153,38 +152,52 @@
             });
         }
         
-        // Wait for sign-in before handling state
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                handleAuthState(user);
-            } else {
-                console.log("⏳ Waiting for sign-in...");
+        // Main initialization logic
+        async function initApp() {
+            if (!firebaseConfig) {
+                const errorMessage = "❌ Firebase configuration is invalid or missing. Please ensure it's correctly provided.";
+                console.error(errorMessage);
+                loadingEl.textContent = errorMessage;
+                loadingEl.classList.remove('hidden');
+                return;
             }
-        });
 
-        // Perform sign-in after DOM is ready
-        document.addEventListener('DOMContentLoaded', async () => {
             try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                setLogLevel('debug');
+                
+                onAuthStateChanged(auth, handleAuthState);
+
                 if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } catch (error) {
+                        console.error("Custom token sign-in failed, falling back to anonymous.", error);
+                        await signInAnonymously(auth);
+                    }
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (error) {
-                console.error("Custom token sign-in failed, falling back to anonymous.", error);
-                await signInAnonymously(auth);
-            }
 
-            // Logout
-            logoutBtn.addEventListener('click', async () => {
-                try {
-                    await signOut(auth);
-                    window.location.href = './index.html';
-                } catch (error) {
-                    console.error("Logout error:", error);
-                }
-            });
-        });
+                logoutBtn.addEventListener('click', async () => {
+                    try {
+                        await signOut(auth);
+                        window.location.href = './index.html';
+                    } catch (error) {
+                        console.error("Logout error:", error);
+                    }
+                });
+            } catch (e) {
+                const errorMessage = `❌ Firebase initialization failed: ${e.message}`;
+                console.error(errorMessage, e);
+                loadingEl.textContent = errorMessage;
+                loadingEl.classList.remove('hidden');
+            }
+        }
+
+        initApp();
     </script>
 </body>
 </html>
