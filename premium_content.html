@@ -1,98 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Agent Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        .gradient-bg {
-            background-color: #0b1a20;
-            background-image: linear-gradient(180deg, #1b262c 0%, #0b1a20 100%);
-        }
-        .btn-primary {
-            @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
-        }
-        .container-card {
-            @apply bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 max-w-4xl w-full mx-auto;
-        }
-        .hidden { display: none; }
-    </style>
-    <script type="module">
-        import { auth, signOut } from "./firebaseAuth.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Agent Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .gradient-bg {
+            background-color: #0b1a20;
+            background-image: linear-gradient(180deg, #1b262c 0%, #0b1a20 100%);
+        }
+        .btn-primary {
+            @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
+        }
+        .container-card {
+            @apply bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 max-w-4xl w-full mx-auto;
+        }
+        .hidden { display: none; }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // UI elements
-        const loadingEl = document.getElementById("loading");
-        const mainContainer = document.getElementById("main-container");
-        const premiumContentEl = document.getElementById("premium-content");
-        const logoutBtn = document.getElementById("logoutBtn");
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
+            authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
+            projectId: "forefront-ugc-subscriptions",
+            storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
+            messagingSenderId: "988222732912",
+            appId: "1:988222732912:web:151a0b709106dfc67692b5",
+            measurementId: "G-ZXHZ4T2VKS"
+        };
+        
+        const appId = "ugc-hub-app";
+        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
+        const firebaseCustomConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
 
-        function initializeAuthListener() {
-            onAuthStateChanged(auth, (user) => {
-                loadingEl.classList.add("hidden");
+        // Initialize Firebase services
+        const app = initializeApp(firebaseCustomConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-                if (!user || user.isAnonymous) {
-                    console.log("❌ No authenticated user, redirecting to login page...");
-                    window.location.href = './login.html';
-                    return;
+        // UI elements
+        const loadingEl = document.getElementById("loading");
+        const mainContainer = document.getElementById("main-container");
+        const premiumContentEl = document.getElementById("premium-content");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        function initializeAuthListener() {
+            onAuthStateChanged(auth, async (user) => {
+                loadingEl.classList.add("hidden");
+
+                if (!user || user.isAnonymous) {
+                    console.log("❌ No authenticated user, redirecting to login page...");
+                    window.location.href = './index.html';
+                    return;
+                }
+
+                // Fetch user data to check subscription tier
+                const userDocPath = `/artifacts/${currentAppId}/users/${user.uid}/profile/data`;
+                const docRef = doc(db, userDocPath);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    const subscriptionTier = userData.subscription;
+
+                    if (['Tier 1', 'Tier 2', 'Tier 3'].includes(subscriptionTier)) {
+                        console.log("✅ User has a valid subscription tier.");
+                        mainContainer.classList.remove("hidden");
+                        premiumContentEl.classList.remove("hidden");
+                    } else {
+                        console.log("❌ User does not have a valid subscription tier, redirecting...");
+                        window.location.href = './index.html?message=premium_access_denied';
+                    }
+                } else {
+                    console.log("❌ User data not found, redirecting...");
+                    window.location.href = './index.html?message=premium_access_denied';
                 }
+            });
 
-                console.log("✅ User logged in:", user.email || user.uid);
-                mainContainer.classList.remove("hidden");
-                premiumContentEl.classList.remove("hidden");
-            });
+            logoutBtn.addEventListener("click", async () => {
+                try {
+                    await signOut(auth);
+                    window.location.href = "./index.html";
+                } catch (error) {
+                    console.error("Logout error:", error);
+                }
+            });
+        }
 
-            logoutBtn.addEventListener("click", async () => {
-                try {
-                    await signOut(auth);
-                    window.location.href = "./login.html";
-                } catch (error) {
-                    console.error("Logout error:", error);
-                }
-            });
+        // Initial sign-in with custom token (if available)
+        async function initialAuth() {
+            if (typeof __initial_auth_token !== 'undefined') {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
         }
 
-        window.onload = initializeAuthListener;
-    </script>
+        window.onload = async () => {
+            await initialAuth();
+            initializeAuthListener();
+        };
+    </script>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 text-gray-200">
-    <div id="loading" class="text-center p-6 text-xl font-medium">
-        Checking login...
-    </div>
+    <div id="loading" class="text-center p-6 text-xl font-medium">
+        Checking login and subscription status...
+    </div>
 
-    <div id="main-container" class="hidden max-w-4xl w-full space-y-8">
-        <div id="premium-content" class="container-card hidden">
-            <div class="flex flex-col sm:flex-row items-center justify-between mb-8">
-                <h1 class="text-3xl font-extrabold text-gray-100 sm:text-4xl">
-                    <span class="text-yellow-500">AI</span> Agent Dashboard
-                </h1>
-                <button id="logoutBtn" class="btn-primary mt-4 sm:mt-0 text-sm px-4 py-2">Log out</button>
-            </div>
-            
-            <hr class="border-t-2 border-gray-700 my-8">
+    <div id="main-container" class="hidden max-w-4xl w-full space-y-8">
+        <div id="premium-content" class="container-card hidden">
+            <div class="flex flex-col sm:flex-row items-center justify-between mb-8">
+                <h1 class="text-3xl font-extrabold text-gray-100 sm:text-4xl">
+                    <span class="text-yellow-500">AI</span> Agent Dashboard
+                </h1>
+                <button id="logoutBtn" class="btn-primary mt-4 sm:mt-0 text-sm px-4 py-2">Log out</button>
+            </div>
+            
+            <hr class="border-t-2 border-gray-700 my-8">
 
-            <div id="ai-agent-section" class="space-y-6">
-                <h2 class="text-2xl font-bold text-gray-100 text-center">Your AI Agent</h2>
-                <div class="bg-gray-900 p-6 rounded-xl border border-gray-700 h-[600px] overflow-hidden">
-                    <iframe 
-                        src="https://app.relevanceai.com/agents/bcbe5a/2bf5cc2a-7929-4eda-84d0-8c3c9fa9fbfb/7302844c-15b5-4e6c-a9f4-7c162fd2afd4/share?hide_tool_steps=false&hide_file_uploads=false&hide_conversation_list=false&bubble_style=agent&primary_color=%23685FFF&bubble_icon=pd%2Fchat&input_placeholder_text=Type+your+message...&hide_logo=false&hide_description=false" 
-                        width="100%" 
-                        height="100%" 
-                        frameborder="0" 
-                        allow="microphone">
-                    </iframe>
-                </div>
-            </div>
-        </div>
-    </div>
+            <div id="ai-agent-section" class="space-y-6">
+                <h2 class="text-2xl font-bold text-gray-100 text-center">Your AI Agent</h2>
+                <div class="bg-gray-900 p-6 rounded-xl border border-gray-700 h-[600px] overflow-hidden">
+                    <iframe 
+                        src="https://app.relevanceai.com/agents/bcbe5a/2bf5cc2a-7929-4eda-84d0-8c3c9fa9fbfb/7302844c-15b5-4e6c-a9f4-7c162fd2afd4/share?hide_tool_steps=false&hide_file_uploads=false&hide_conversation_list=false&bubble_style=agent&primary_color=%23685FFF&bubble_icon=pd%2Fchat&input_placeholder_text=Type+your+message...&hide_logo=false&hide_description=false" 
+                        width="100%" 
+                        height="100%" 
+                        frameborder="0" 
+                        allow="microphone">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
+
