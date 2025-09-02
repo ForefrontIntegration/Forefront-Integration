@@ -13,7 +13,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -38,6 +38,8 @@
         const loggedOutContainer = document.getElementById('logged-out-container');
         const userEmailDisplay = document.getElementById('user-email');
         const userDisplayId = document.getElementById('user-id-display');
+        const userSubscriptionDisplay = document.getElementById('user-subscription'); // New: User subscription display
+        const subscribeBtn = document.getElementById('subscribe-btn'); // New: Subscribe button
         const pageLinks = document.querySelectorAll('.page-link');
         const contentPages = {
             'hidden-page-1': document.getElementById('hidden-page-1'),
@@ -47,7 +49,7 @@
         const loginForm = document.getElementById('login-form');
         const errorContainer = document.getElementById('error-container');
         const errorMessage = document.getElementById('error-message');
-        const googleSignInBtn = document.getElementById('google-signin-btn'); // New: Get the Google sign-in button
+        const googleSignInBtn = document.getElementById('google-signin-btn');
 
         // Main function to initialize Firebase and set up auth listener
         async function initializeFirebase() {
@@ -95,7 +97,12 @@
 
             if (!docSnap.exists()) {
                 // Document doesn't exist, create a default one
-                await setDoc(docRef, { email: auth.currentUser.email });
+                await setDoc(docRef, { email: auth.currentUser.email, subscription: 'None' });
+            } else {
+                // Update UI based on subscription status
+                const userData = docSnap.data();
+                userSubscriptionDisplay.textContent = userData.subscription || 'None';
+                renderPremiumLinks(userData.subscription);
             }
         }
 
@@ -104,19 +111,29 @@
             loggedInContainer.classList.remove('hidden');
             loggedOutContainer.classList.add('hidden');
             userEmailDisplay.textContent = auth.currentUser.email || 'N/A';
-            renderLoggedInUI();
         }
 
         function showLoggedOutState() {
             loggedInContainer.classList.add('hidden');
             loggedOutContainer.classList.remove('hidden');
         }
+        
+        // New function to update the UI based on subscription tier
+        function renderPremiumLinks(subscriptionTier) {
+            // All signed-in users get access to the first two pages
+            document.getElementById('link-page-1').classList.remove('hidden');
+            document.getElementById('link-page-2').classList.remove('hidden');
 
-        // Render UI for logged-in users
-        function renderLoggedInUI() {
-            // Show all hidden pages and links
-            Object.values(contentPages).forEach(page => page.classList.remove('hidden'));
-            pageLinks.forEach(link => link.classList.remove('hidden'));
+            // Only subscribers get access to the Tier 1 dashboard and the third page
+            if (subscriptionTier === 'Tier 1') {
+                document.getElementById('link-tier-1').classList.remove('hidden');
+                document.getElementById('link-page-3').classList.remove('hidden');
+                subscribeBtn.classList.add('hidden'); // Hide subscribe button
+            } else {
+                document.getElementById('link-tier-1').classList.add('hidden');
+                document.getElementById('link-page-3').classList.add('hidden');
+                subscribeBtn.classList.remove('hidden'); // Show subscribe button
+            }
         }
 
         // Handle page link clicks
@@ -157,11 +174,27 @@
             const provider = new GoogleAuthProvider();
             try {
                 await signInWithPopup(auth, provider);
-                // The onAuthStateChanged listener will handle the UI update.
-                // We no longer redirect automatically here.
             } catch (error) {
                 console.error("Google OAuth error:", error);
                 showError("Google sign-in failed. Please try again.");
+            }
+        }
+        
+        // New: Simulate a subscription upgrade
+        async function updateSubscription() {
+            try {
+                if (auth.currentUser && auth.currentUser.isAnonymous === false) {
+                    const userDocPath = `/artifacts/${currentAppId}/users/${auth.currentUser.uid}/profile/data`;
+                    const docRef = doc(db, userDocPath);
+                    await updateDoc(docRef, {
+                        subscription: 'Tier 1'
+                    });
+                    // UI will update automatically via onAuthStateChanged
+                    showError("Subscription activated successfully!", false);
+                }
+            } catch (error) {
+                console.error("Subscription update error:", error);
+                showError("Failed to upgrade subscription. Please try again.");
             }
         }
 
@@ -186,9 +219,13 @@
             }
         }
         
-        // New: Attach event listener to the Google Sign-in button
         if (googleSignInBtn) {
             googleSignInBtn.addEventListener('click', connectWithGoogle);
+        }
+        
+        // New: Attach event listener to the subscribe button
+        if (subscribeBtn) {
+            subscribeBtn.addEventListener('click', updateSubscription);
         }
 
         // Initialize the app on page load
@@ -328,21 +365,31 @@
                         <p class="text-sm text-gray-500 mt-2">
                             Your User ID: <span id="user-id-display"></span>
                         </p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            Subscription Status: <span id="user-subscription" class="font-bold text-yellow-400"></span>
+                        </p>
                     </div>
 
+                    <!-- Subscription Button -->
+                    <div id="subscribe-container">
+                         <button id="subscribe-btn" class="w-full btn-primary mt-6">
+                            Subscribe to Tier 1
+                        </button>
+                    </div>
+                    
                     <!-- Navigation links for hidden pages and Tier 1 -->
-                    <nav class="mb-8">
+                    <nav class="my-8">
                         <ul class="flex flex-wrap sm:flex-nowrap justify-center space-x-4">
                             <li class="page-link hidden" id="link-page-1">
-                                <button data-target="hidden-page-1" class="btn-primary">Hidden Page 1</button>
+                                <button data-target="hidden-page-1" class="btn-primary">Creator Hub</button>
                             </li>
                             <li class="page-link hidden" id="link-page-2">
-                                <button data-target="hidden-page-2" class="btn-primary">Hidden Page 2</button>
+                                <button data-target="hidden-page-2" class="btn-primary">Advanced Analytics</button>
                             </li>
                             <li class="page-link hidden" id="link-page-3">
-                                <button data-target="hidden-page-3" class="btn-primary">Hidden Page 3</button>
+                                <button data-target="hidden-page-3" class="btn-primary">AI-Powered Insights</button>
                             </li>
-                            <li id="link-tier-1">
+                            <li id="link-tier-1" class="hidden">
                                 <a href="./tier1.html" class="btn-primary">Tier 1 Dashboard</a>
                             </li>
                         </ul>
@@ -351,21 +398,21 @@
                     <!-- Hidden Page Content -->
                     <div id="tiers-container">
                         <div id="hidden-page-1" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700">
-                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Hidden Page 1: The Creator Hub</h4>
+                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Creator Hub (All Users)</h4>
                             <p class="text-gray-400">
-                                This page is accessible to all creators and contains our essential tools for content creation. Here you'll find the basic dashboard and file management systems.
+                                This page is accessible to all signed-in creators and contains our essential tools for content creation. Here you'll find the basic dashboard and file management systems.
                             </p>
                         </div>
                         
                         <div id="hidden-page-2" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
-                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Hidden Page 2: Advanced Analytics</h4>
+                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Advanced Analytics (All Users)</h4>
                             <p class="text-gray-400">
                                 This content features detailed analytics on content performance, audience demographics, and revenue tracking.
                             </p>
                         </div>
                         
                         <div id="hidden-page-3" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
-                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Hidden Page 3: AI-Powered Insights</h4>
+                            <h4 class="font-bold text-yellow-500 text-lg mb-2">AI-Powered Insights (Tier 1 Subscribers Only)</h4>
                             <p class="text-gray-400">
                                 This exclusive page provides cutting-edge, AI-driven insights to help you optimize your content for maximum engagement and monetization.
                             </p>
