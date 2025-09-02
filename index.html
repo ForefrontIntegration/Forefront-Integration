@@ -47,6 +47,7 @@
         const loginForm = document.getElementById('login-form');
         const errorContainer = document.getElementById('error-container');
         const errorMessage = document.getElementById('error-message');
+        const googleSignInBtn = document.getElementById('google-signin-btn'); // New: Get the Google sign-in button
 
         // Main function to initialize Firebase and set up auth listener
         async function initializeFirebase() {
@@ -183,6 +184,11 @@
             } else {
                 errorContainer.classList.add('hidden');
             }
+        }
+        
+        // New: Attach event listener to the Google Sign-in button
+        if (googleSignInBtn) {
+            googleSignInBtn.addEventListener('click', connectWithGoogle);
         }
 
         // Initialize the app on page load
@@ -391,7 +397,7 @@
 
                     <!-- Google Login Button -->
                     <button
-                        onclick="connectWithGoogle()"
+                        id="google-signin-btn"
                         class="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white font-medium py-3 px-4 rounded-full shadow-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
                         <!-- Google Icon SVG -->
                         <svg class="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
