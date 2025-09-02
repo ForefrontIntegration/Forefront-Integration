@@ -55,7 +55,7 @@
                 }
 
                 // This is the core logic. onAuthStateChanged is the only source of truth.
-                // We show the loader until we get a definitive response from Firebase.
+                // We wait for a definitive response before showing any content.
                 onAuthStateChanged(auth, async (user) => {
                     loader.classList.add('hidden');
                     mainContainer.classList.remove('hidden');
