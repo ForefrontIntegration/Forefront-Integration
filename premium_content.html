@@ -75,7 +75,7 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { /* Your default firebase config here */ };
         
-        // Initialize Firebase services outside of the DOMContentLoaded listener
+        // Initialize Firebase services
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -92,15 +92,9 @@
         const logoutBtn = document.getElementById('logout-btn');
         const tier1ContentEl = document.getElementById('tier-1-content');
 
-        // This function handles the core logic after Firebase is initialized
+        // Handle subscription and UI
         async function handleAuthState(user) {
-            loadingEl.classList.add('hidden');
-            if (!user) {
-                // No valid authenticated user, redirect to login
-                console.log("❌ No authenticated user, redirecting to login page.");
-                window.location.href = './index.html';
-                return;
-            }
+            if (!user) return; // wait for login
 
             console.log("✅ User logged in:", user.email);
             userId = user.uid;
@@ -108,34 +102,34 @@
             userEmailDisplay.textContent = user.email || 'N/A';
             
             try {
-                // Fetch user profile to check subscription
-                const userDocPath = `/artifacts/${appId}/users/${userId}/profile/data`;
-                const userRef = doc(db, userDocPath);
+                // Fetch user profile doc
+                const userRef = doc(db, "artifacts", appId, "users", userId, "profile", "data");
                 const userSnap = await getDoc(userRef);
 
                 const allowedTiers = ["Tier 1", "Tier 2", "Tier 3"];
                 if (userSnap.exists() && allowedTiers.includes(userSnap.data().subscription)) {
                     console.log("📦 Subscription tier:", userSnap.data().subscription);
+                    loadingEl.classList.add('hidden');
                     dashboardContainer.classList.remove("hidden");
                     noAccessEl.classList.add("hidden");
                     fetchTier1Content();
                 } else {
                     console.log("⚠️ Access denied. User does not have a required subscription.");
+                    loadingEl.classList.add('hidden');
                     dashboardContainer.classList.add("hidden");
                     noAccessEl.classList.remove("hidden");
                 }
             } catch (err) {
                 console.error("⚠️ Error fetching subscription:", err);
-                // Handle the case where the profile doc doesn't exist or is permission-denied
+                loadingEl.classList.add('hidden');
                 dashboardContainer.classList.add("hidden");
                 noAccessEl.classList.remove("hidden");
             }
         }
 
-        // Fetch Tier 1 exclusive content using a real-time listener
+        // Fetch Tier 1 exclusive content
         function fetchTier1Content() {
-            const tier1CollectionPath = `/artifacts/${appId}/public/data/tier1_content`;
-            const q = collection(db, tier1CollectionPath);
+            const q = collection(db, "artifacts", appId, "public", "data", "tier1_content");
             
             onSnapshot(q, (querySnapshot) => {
                 let contentHTML = '';
@@ -159,24 +153,29 @@
             });
         }
         
-        // Listen for auth state changes immediately
-        onAuthStateChanged(auth, handleAuthState);
+        // Wait for sign-in before handling state
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                handleAuthState(user);
+            } else {
+                console.log("⏳ Waiting for sign-in...");
+            }
+        });
 
-        // Sign in after the listener is active
+        // Perform sign-in after DOM is ready
         document.addEventListener('DOMContentLoaded', async () => {
-             // Attempt to sign in with custom token or anonymously
-            if (typeof __initial_auth_token !== 'undefined') {
-                try {
+            try {
+                if (typeof __initial_auth_token !== 'undefined') {
                     await signInWithCustomToken(auth, __initial_auth_token);
-                } catch (error) {
-                    console.error("Custom token sign-in failed, falling back to anonymous.", error);
+                } else {
                     await signInAnonymously(auth);
                 }
-            } else {
+            } catch (error) {
+                console.error("Custom token sign-in failed, falling back to anonymous.", error);
                 await signInAnonymously(auth);
             }
 
-            // Add event listener for logout button
+            // Logout
             logoutBtn.addEventListener('click', async () => {
                 try {
                     await signOut(auth);
