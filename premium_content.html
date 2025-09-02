@@ -57,6 +57,9 @@
                 // This is the core logic. onAuthStateChanged is the only source of truth.
                 // We show the loader until we get a definitive response from Firebase.
                 onAuthStateChanged(auth, async (user) => {
+                    loader.classList.add('hidden');
+                    mainContainer.classList.remove('hidden');
+
                     if (user && user.isAnonymous === false) {
                         userId = user.uid;
                         await fetchSubscriptionStatus(userId);
@@ -68,10 +71,6 @@
             } catch (error) {
                 console.error("Firebase initialization or auth error:", error);
                 showLoginRequired();
-            } finally {
-                // Ensure the loader is hidden and main container is visible regardless of the outcome
-                loader.classList.add('hidden');
-                mainContainer.classList.remove('hidden');
             }
         }
 
@@ -139,7 +138,8 @@
             }
         });
 
-        initializeFirebase();
+        // Initialize Firebase on window load
+        window.onload = initializeFirebase;
     </script>
     <style>
         body {
