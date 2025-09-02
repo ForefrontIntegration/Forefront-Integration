@@ -137,8 +137,6 @@
         
         function renderPremiumLinks(subscriptionTier) {
             document.getElementById('link-my-profile').classList.remove('hidden');
-            document.getElementById('link-page-1').classList.remove('hidden');
-            document.getElementById('link-page-2').classList.remove('hidden');
 
             if (subscriptionTier === 'Tier 1') {
                 document.getElementById('link-premium-content').classList.remove('hidden');
@@ -279,7 +277,7 @@
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <div class="flex items-center">
                 <span class="text-3xl font-bold text-gray-100">
-                    <span class="text-yellow-500">UGC</span><span class="text-gray-400">Hub</span>
+                    <span class="text-yellow-500">Forefront</span><span class="text-gray-400">Integration</span>
                 </span>
             </div>
             <div class="hidden md:flex items-center space-x-8">
@@ -377,18 +375,12 @@
 
                     <div id="subscribe-container">
                        <a href="./premium_content.html" id="subscribe-btn" class="w-full btn-primary text-center block mt-6">
-                            Subscribe to Tier 1
+                            Email Draft Agent
                         </a>
                     </div>
                     
                     <nav class="my-8">
                         <ul class="flex flex-wrap sm:flex-nowrap justify-center space-x-4">
-                            <li class="page-link hidden" id="link-page-1">
-                                <button data-target="hidden-page-1" class="btn-primary">Creator Hub</button>
-                            </li>
-                            <li class="page-link hidden" id="link-page-2">
-                                <button data-target="hidden-page-2" class="btn-primary">Advanced Analytics</button>
-                            </li>
                             <li class="page-link hidden" id="link-my-profile">
                                 <button data-target="hidden-page-3" class="btn-primary">My Profile</button>
                             </li>
@@ -419,7 +411,7 @@
                         <div id="hidden-page-3" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
                             <h4 class="font-bold text-yellow-500 text-lg mb-2">My Profile</h4>
                             <p class="text-gray-400 mb-4">Update your profile information below.</p>
-                            <form id="profile-form" class="space-y-4">
+                            <form id="profile-form" class="space-y-4 hidden">
                                 <div>
                                     <label for="profile-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
                                     <input type="email" id="profile-email" placeholder="New Email Address" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300">
