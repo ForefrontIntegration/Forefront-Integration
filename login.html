@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login to Your Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .gradient-bg {
+            background-color: #0b1a20;
+            background-image: linear-gradient(180deg, #1b262c 0%, #0b1a20 100%);
+        }
+        .btn-primary {
+            @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
+        }
+        .login-card {
+            @apply bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 max-w-sm w-full;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 text-gray-200">
+    <div class="login-card">
+        <div class="text-center">
+            <h1 class="text-3xl font-extrabold text-gray-100 mb-2">
+                Log In
+            </h1>
+            <p class="text-gray-400 mb-8">
+                Welcome to the AI Agent Dashboard. Please log in to continue.
+            </p>
+            <!-- Login buttons -->
+            <button id="google-login-btn" onclick="connectWithGoogle()" class="flex items-center justify-center w-full btn-primary mb-4">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 48 48">
+                    <path fill="#FFC107" d="M43.61 24.23c0-.98-.08-1.93-.24-2.87H24v5.37h10.94c-.47 2.4-1.85 4.47-3.9 5.86l4.63 3.55c2.72-2.52 4.31-6.23 4.31-10.91z"></path>
+                    <path fill="#FF3D00" d="M24 43.6c5.96 0 10.96-1.97 14.61-5.35l-4.63-3.55c-2.05 1.39-4.73 2.22-7.98 2.22-6.14 0-11.39-4.14-13.29-9.75H6.28l-4.72 3.6c3.62 7.15 11.23 12.05 19.86 12.05z"></path>
+                    <path fill="#4CAF50" d="M10.71 28.53c-.45-1.39-.71-2.88-.71-4.53s.26-3.14.71-4.53V15.1l-4.72-3.6c-1.57 3.1-2.49 6.64-2.49 10.29s.92 7.19 2.49 10.29l4.72-3.6z"></path>
+                    <path fill="#1976D2" d="M24 10.4c3.25 0 6.13 1.12 8.44 3.29L36.8 9.3c-2.72-2.52-6.27-4.12-10.8-4.12-8.63 0-16.24 4.9-19.86 12.05l4.72 3.6c1.9-5.61 7.15-9.75 13.29-9.75z"></path>
+                </svg>
+                Sign in with Google
+            </button>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { connectWithGoogle } from './firebaseAuth.js';
+        
+        // Use dynamic Canvas-provided variables instead of hardcoded values
+        const fallbackFirebaseConfig = {
+            apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
+            authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
+            projectId: "forefront-ugc-subscriptions",
+            storageBucket: "forefront-ugc-subscriptions.appspot.com",
+            messagingSenderId: "988222732912",
+            appId: "1:988222732912:web:151a0b709106dfc67692b5",
+            measurementId: "G-ZXHZ4T2VKS"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackFirebaseConfig;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let auth;
+        let db;
+
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Use the initial custom token if it exists for automatic login
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                // If a user is already logged in, redirect them to the dashboard
+                onAuthStateChanged(auth, (user) => {
+                    if (user && !user.isAnonymous) {
+                        console.log("User already logged in, redirecting to dashboard.");
+                        window.location.href = './ai_agent_dashboard.html';
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+            }
+        }
+        
+        window.onload = initializeFirebase;
+    </script>
+</body>
+</html>
