@@ -12,7 +12,7 @@ import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11
 // Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
-    authDomain: "https://www.forefrontintegration.com",
+    authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
     projectId: "forefront-ugc-subscriptions",
     storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
     messagingSenderId: "988222732912",
