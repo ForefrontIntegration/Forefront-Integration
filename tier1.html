@@ -59,38 +59,37 @@
                 db = getFirestore(app);
                 setLogLevel('debug');
 
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
                 onAuthStateChanged(auth, async (user) => {
                     loadingEl.classList.add("hidden");
                     mainContainer.classList.remove("hidden");
                     // Check if a user is logged in
                     if (!user) {
-                         // No user is signed in, redirect if not on a login/signup page
-                        window.location.href = './index.html';
+                         // No user is signed in, redirect to the login page
+                        console.log("No authenticated user, redirecting to login page...");
+                        window.location.href = './login.html';
                     } else {
                         console.log("✅ User logged in:", user.email || user.uid);
                         // Show the dashboard as the user is authenticated
                         premiumContentEl.classList.remove("hidden");
                     }
                 });
+
+                // Since we're not handling sign-in here, we don't need the custom token logic.
+                // We'll let the onAuthStateChanged listener handle the redirect if the token is missing.
+
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
                 loadingEl.classList.add("hidden");
                 premiumContentEl.classList.add("hidden");
                 // Fallback to home page on error
-                window.location.href = './index.html';
+                window.location.href = './login.html';
             }
         }
 
         logoutBtn.addEventListener("click", async () => {
             try {
                 await signOut(auth);
-                window.location.href = "./index.html";
+                window.location.href = "./login.html";
             } catch (error) {
                 console.error("Logout error:", error);
             }
