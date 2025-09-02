@@ -5,7 +5,9 @@ import {
     onAuthStateChanged, 
     signOut,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithPopup,
+    signInWithCustomToken,
+    signInAnonymously
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -23,50 +25,31 @@ const firebaseConfig = {
 const appId = "ugc-hub-app";
 const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
 const firebaseCustomConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-let auth;
-let db;
+// Initialize Firebase services and export the auth and db objects
+const app = initializeApp(firebaseCustomConfig);
+const analytics = getAnalytics(app);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+setLogLevel('debug');
+
 let userId = '';
 
-// Initialize Firebase services and set up auth listener
-async function initializeFirebase() {
+// Handle the initial sign-in logic when the script is loaded
+async function handleInitialSignIn() {
     try {
-        const app = initializeApp(firebaseCustomConfig);
-        const analytics = getAnalytics(app);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        setLogLevel('debug');
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user && user.isAnonymous === false) {
-                // User is signed in
-                const userEmailDisplay = document.getElementById('user-email');
-                const userDisplayId = document.getElementById('user-id-display');
-                userId = user.uid;
-                if (userEmailDisplay) userEmailDisplay.textContent = user.email || 'N/A';
-                if (userDisplayId) userDisplayId.textContent = userId;
-            } else {
-                // No user is signed in, redirect if not on a login/signup page
-                if (window.location.pathname !== '/index.html' && window.location.pathname !== '/signup.html') {
-                    window.location.href = './index.html';
-                }
-            }
-        });
-
-        // Set up logout button functionality
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', async () => {
-                try {
-                    await signOut(auth);
-                    window.location.href = './index.html';
-                } catch (error) {
-                    console.error("Logout error:", error);
-                }
-            });
+        if (initialAuthToken) {
+            // Sign in with the provided custom token
+            await signInWithCustomToken(auth, initialAuthToken);
+            console.log("Signed in with custom token.");
+        } else {
+            // Sign in anonymously as a fallback
+            await signInAnonymously(auth);
+            console.log("Signed in anonymously.");
         }
     } catch (error) {
-        console.error("Firebase initialization or auth error:", error);
+        console.error("Initial sign-in failed:", error);
     }
 }
 
@@ -75,18 +58,47 @@ export async function connectWithGoogle() {
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
-        // User's info is in result.user
         const user = result.user;
         console.log("Successfully connected with Google:", user);
-        // You can now redirect the user or update the UI
         window.location.href = './tier1.html';
     } catch (error) {
         console.error("Google OAuth error:", error);
     }
 }
 
-// Global functions for other pages to use
-window.connectWithGoogle = connectWithGoogle;
+// Set up the state change listener to update UI or redirect
+onAuthStateChanged(auth, async (user) => {
+    if (user && user.isAnonymous === false) {
+        // User is signed in
+        const userEmailDisplay = document.getElementById('user-email');
+        const userDisplayId = document.getElementById('user-id-display');
+        userId = user.uid;
+        if (userEmailDisplay) userEmailDisplay.textContent = user.email || 'N/A';
+        if (userDisplayId) userDisplayId.textContent = userId;
+    } else {
+        // No user is signed in, redirect if not on a login/signup page
+        const path = window.location.pathname;
+        if (path.endsWith('login.html') || path.endsWith('index.html')) {
+            // Do not redirect on these pages
+        } else {
+            // Redirect to a specific page for anonymous or unauthenticated users
+            window.location.href = './login.html';
+        }
+    }
+});
 
-// Initialize Firebase when the script loads
-initializeFirebase();
+// Set up logout button functionality
+const logoutBtn = document.getElementById('logout-btn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            window.location.href = './login.html';
+        } catch (error) {
+            console.error("Logout error:", error);
+        }
+    });
+}
+
+// Handle the initial sign-in attempt
+handleInitialSignIn();
