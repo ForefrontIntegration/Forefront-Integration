@@ -1,25 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Premium Content</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UGC Hub – Premium</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center justify-center p-6">
+  
+  <!-- Loader -->
+  <div id="loading" class="text-center space-y-4">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500 mx-auto"></div>
+    <p class="text-gray-400">Checking subscription...</p>
+  </div>
+
+  <!-- Premium Content -->
+  <div id="premium-content" class="hidden max-w-3xl text-center">
+    <h1 class="text-3xl font-bold mb-6">Welcome to Premium</h1>
+    <p class="text-gray-300 mb-8">
+      You are logged in with an active premium subscription 🎉
+    </p>
+    <button id="logoutBtn" class="bg-red-500 text-white px-6 py-3 rounded-xl shadow hover:bg-red-600 transition">
+      Log out
+    </button>
+  </div>
+
+  <!-- Upgrade Message -->
+  <div id="upgrade-message" class="hidden text-center max-w-xl">
+    <h2 class="text-2xl font-bold mb-4">Upgrade Required</h2>
+    <p class="text-gray-400 mb-6">
+      Your account does not have access to this page. Please upgrade your subscription.
+    </p>
+    <a href="./index.html" class="bg-yellow-500 text-gray-900 px-6 py-3 rounded-xl shadow hover:bg-yellow-600 transition">
+      Back to Home
+    </a>
+  </div>
+
   <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { 
-      initializeApp 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { 
-      getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence 
+      getAuth, 
+      onAuthStateChanged, 
+      signOut 
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { 
-      getFirestore, doc, getDoc 
+      getFirestore, 
+      doc, 
+      getDoc 
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // 🔥 Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
       authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
@@ -30,120 +65,66 @@
       measurementId: "G-ZXHZ4T2VKS"
     };
 
-    // 🔥 Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // 🔒 Enforce persistence (so login survives page reloads)
-    setPersistence(auth, browserLocalPersistence).catch(err => {
-      console.error("Persistence error:", err);
+    const loadingDiv = document.getElementById("loading");
+    const premiumDiv = document.getElementById("premium-content");
+    const upgradeDiv = document.getElementById("upgrade-message");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // Auth listener
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        console.log("✅ Logged in:", user.email);
+
+        try {
+          // Fetch subscription data from Firestore
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
+
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            console.log("🔑 Subscription data:", data);
+
+            if (data.subscriptionTier === "premium") {
+              // ✅ Show premium content
+              loadingDiv.classList.add("hidden");
+              premiumDiv.classList.remove("hidden");
+            } else {
+              // ❌ Not premium → show upgrade message
+              loadingDiv.classList.add("hidden");
+              upgradeDiv.classList.remove("hidden");
+            }
+          } else {
+            console.warn("No subscription record found.");
+            loadingDiv.classList.add("hidden");
+            upgradeDiv.classList.remove("hidden");
+          }
+        } catch (err) {
+          console.error("Error fetching subscription:", err);
+          loadingDiv.classList.add("hidden");
+          upgradeDiv.classList.remove("hidden");
+        }
+
+      } else {
+        console.log("❌ No user, redirecting...");
+        setTimeout(() => {
+          window.location.href = "./index.html";
+        }, 800);
+      }
     });
 
-    // 🌟 UI Elements
-    const loader = document.getElementById("loader");
-    const mainContainer = document.getElementById("main-container");
-    const loginRequiredMessage = document.getElementById("login-required-message");
-    const premiumContentContainer = document.getElementById("premium-content-container");
-    const subscriptionMessage = document.getElementById("subscription-message");
-
-    function showLoader() {
-      loader.classList.remove("hidden");
-      mainContainer.classList.add("hidden");
-    }
-
-    function hideLoader() {
-      loader.classList.add("hidden");
-      mainContainer.classList.remove("hidden");
-    }
-
-    function showLoginRequired() {
-      loginRequiredMessage.classList.remove("hidden");
-      premiumContentContainer.classList.add("hidden");
-    }
-
-    function showPremiumContent() {
-      loginRequiredMessage.classList.add("hidden");
-      premiumContentContainer.classList.remove("hidden");
-      subscriptionMessage.innerHTML = `
-        <h3 class="font-bold text-lg text-yellow-500 mb-2">
-          Welcome, Tier 1 Subscriber!
-        </h3>
-        <p>Enjoy your exclusive AI-powered insights and tools.</p>
-      `;
-    }
-
-    // 👀 Listen for auth changes
-    onAuthStateChanged(auth, async (user) => {
-      console.log("Auth state changed. User:", user);
-      if (!user) {
-        console.warn("No user found → must log in.");
-        hideLoader();
-        showLoginRequired();
-        return;
-      }
-
+    // Logout
+    logoutBtn.addEventListener("click", async () => {
       try {
-        // Adjust path to match your Firestore structure!
-        const docRef = doc(db, "users", user.uid); 
-        console.log("Checking Firestore doc:", docRef.path);
-
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) {
-          console.warn("No profile found in Firestore.");
-          hideLoader();
-          showLoginRequired();
-          return;
-        }
-
-        const data = docSnap.data();
-        console.log("Profile data:", data);
-
-        if (data.subscription === "Tier 1") {
-          hideLoader();
-          showPremiumContent();
-        } else {
-          hideLoader();
-          showLoginRequired();
-        }
+        await signOut(auth);
+        window.location.href = "./index.html";
       } catch (err) {
-        console.error("Error fetching subscription:", err);
-        hideLoader();
-        showLoginRequired();
+        console.error("Logout failed:", err);
       }
     });
   </script>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    .btn-primary {
-      @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
-    }
-  </style>
-</head>
-<body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen">
-  <!-- Loader -->
-  <div id="loader" class="flex flex-col items-center justify-center space-y-4">
-    <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow-500"></div>
-    <p class="text-gray-400">Loading...</p>
-  </div>
-
-  <main id="main-container" class="hidden container mx-auto px-4 sm:px-6 lg:px-8 max-w-2xl">
-    <!-- Not Logged In Message -->
-    <div id="login-required-message" class="hidden bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 text-center">
-      <h2 class="text-2xl font-bold text-gray-100 mb-4">Access Denied</h2>
-      <p class="text-gray-400 mb-6">You must be logged in to view this content.</p>
-      <a href="./index.html" class="btn-primary">Go to Login Page</a>
-    </div>
-
-    <!-- Premium Content Container -->
-    <div id="premium-content-container" class="hidden bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 text-center">
-      <h2 class="text-2xl font-bold text-gray-100 mb-4">AI-Powered Insights</h2>
-      <div id="subscription-message" class="bg-gray-900 p-6 rounded-xl mb-6"></div>
-    </div>
-  </main>
 </body>
 </html>
