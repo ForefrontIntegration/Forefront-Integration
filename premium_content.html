@@ -1,200 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Content</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module">
-        // Import the necessary Firebase SDKs
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, setLogLevel, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Premium Content</title>
 
-        // Firebase configuration and initialization
-        const firebaseConfig = {
-            apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
-            authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
-            projectId: "forefront-ugc-subscriptions",
-            storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
-            messagingSenderId: "988222732912",
-            appId: "1:988222732912:web:151a0b709106dfc67692b5",
-            measurementId: "G-ZXHZ4T2VKS"
-        };
-        
-        const appId = "ugc-hub-app";
-        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
-        const firebaseCustomConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+  <!-- Fonts & Tailwind -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
 
-        let auth, db;
-        let userId = '';
-        let userSubscriptionStatus = 'None';
-        let unsubscribeFromProfile; // Variable to hold the unsubscribe function
+  <script type="module">
+    // Import Firebase SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot, updateDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // UI Elements
-        const mainContainer = document.getElementById('main-container');
-        const loader = document.getElementById('loader');
-        const loginRequiredMessage = document.getElementById('login-required-message');
-        const premiumContentContainer = document.getElementById('premium-content-container');
-        const subscriptionMessage = document.getElementById('subscription-message');
-        const subscribeBtn = document.getElementById('subscribe-btn');
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
+      authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
+      projectId: "forefront-ugc-subscriptions",
+      storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
+      messagingSenderId: "988222732912",
+      appId: "1:988222732912:web:151a0b709106dfc67692b5",
+      measurementId: "G-ZXHZ4T2VKS"
+    };
 
-        async function initializeFirebase() {
-            try {
-                const app = initializeApp(firebaseCustomConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                setLogLevel('debug');
+    const appId = "ugc-hub-app";
+    const currentAppId = typeof __app_id !== "undefined" ? __app_id : appId;
+    const firebaseCustomConfig = typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : firebaseConfig;
 
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+    let auth, db;
+    let userId = "";
+    let unsubscribeFromProfile;
 
-                // onAuthStateChanged is the single source of truth for authentication.
-                // We'll manage all UI state changes from inside this listener.
-                onAuthStateChanged(auth, async (user) => {
-                    // First, clean up any old subscription listener
-                    if (unsubscribeFromProfile) {
-                        unsubscribeFromProfile();
-                    }
-                    
-                    if (user && user.isAnonymous === false) {
-                        userId = user.uid;
-                        // Now that we have a valid, non-anonymous user, fetch their profile
-                        fetchSubscriptionStatus(userId);
-                    } else {
-                        // User is not logged in or is anonymous
-                        showLoginRequired();
-                    }
+    // UI elements
+    const mainContainer = document.getElementById("main-container");
+    const loader = document.getElementById("loader");
+    const loginRequiredMessage = document.getElementById("login-required-message");
+    const premiumContentContainer = document.getElementById("premium-content-container");
+    const subscriptionMessage = document.getElementById("subscription-message");
+    const subscribeBtn = document.getElementById("subscribe-btn");
 
-                    // Hide the loader and show the main container once a user state is determined
-                    loader.classList.add('hidden');
-                    mainContainer.classList.remove('hidden');
-                });
+    async function initializeFirebase() {
+      try {
+        const app = initializeApp(firebaseCustomConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        setLogLevel("debug");
 
-            } catch (error) {
-                console.error("Firebase initialization or auth error:", error);
-                showLoginRequired();
+        // Only sign in with custom token if provided
+        if (typeof __initial_auth_token !== "undefined") {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        }
+
+        // Main auth state listener
+        onAuthStateChanged(auth, async (user) => {
+          // Clean up old subscription listener
+          if (unsubscribeFromProfile) {
+            unsubscribeFromProfile();
+          }
+
+          if (user) {
+            if (user.isAnonymous) {
+              showLoginRequired();
+            } else {
+              userId = user.uid;
+              fetchSubscriptionStatus(userId);
             }
-        }
+          } else {
+            showLoginRequired();
+          }
 
-        function fetchSubscriptionStatus(uid) {
-            const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
-            const docRef = doc(db, userDocPath);
-
-            // Use onSnapshot to get real-time updates for the user's profile
-            unsubscribeFromProfile = onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    userSubscriptionStatus = docSnap.data().subscription;
-                    if (userSubscriptionStatus === 'Tier 1') {
-                        showPremiumContent();
-                    } else {
-                        showSubscriptionCTA();
-                    }
-                } else {
-                    console.warn("User profile not found. Creating a new one.");
-                    // Create a new profile with a default subscription status
-                    setDoc(docRef, { email: auth.currentUser.email, subscription: 'None' });
-                    showSubscriptionCTA();
-                }
-            }, (error) => {
-                // This is a crucial check for permission errors
-                console.error("Error fetching user profile:", error);
-                showLoginRequired();
-            });
-        }
-
-        function showLoginRequired() {
-            loginRequiredMessage.classList.remove('hidden');
-            premiumContentContainer.classList.add('hidden');
-        }
-        
-        function showSubscriptionCTA() {
-            loginRequiredMessage.classList.add('hidden');
-            premiumContentContainer.classList.remove('hidden');
-            subscriptionMessage.innerHTML = 'Access to this content requires a premium subscription.';
-            subscribeBtn.classList.remove('hidden');
-        }
-
-        function showPremiumContent() {
-            loginRequiredMessage.classList.add('hidden');
-            premiumContentContainer.classList.remove('hidden');
-            subscriptionMessage.innerHTML = '<h3 class="font-bold text-lg text-yellow-500 mb-2">Welcome, Tier 1 Subscriber!</h3><p>Enjoy your exclusive AI-powered insights and tools.</p>';
-            subscribeBtn.classList.add('hidden');
-        }
-
-        subscribeBtn.addEventListener('click', async () => {
-            if (userId) {
-                const userDocPath = `/artifacts/${currentAppId}/users/${userId}/profile/data`;
-                try {
-                    await updateDoc(doc(db, userDocPath), {
-                        subscription: 'Tier 1'
-                    });
-                    // Firestore snapshot listener will handle re-rendering the UI
-                } catch (error) {
-                    console.error("Error updating subscription:", error);
-                    // Using a custom modal instead of alert()
-                    const messageBox = document.createElement('div');
-                    messageBox.className = 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-50';
-                    messageBox.innerHTML = `
-                        <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-white max-w-sm w-full text-center">
-                            <p class="mb-4">Failed to update subscription. Please try again.</p>
-                            <button onclick="this.parentNode.parentNode.remove()" class="btn-primary">OK</button>
-                        </div>
-                    `;
-                    document.body.appendChild(messageBox);
-                }
-            }
+          loader.classList.add("hidden");
+          mainContainer.classList.remove("hidden");
         });
+      } catch (error) {
+        console.error("Firebase init/auth error:", error);
+        showLoginRequired();
+      }
+    }
 
-        // Initialize Firebase on window load
-        window.onload = initializeFirebase;
-    </script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+    function fetchSubscriptionStatus(uid) {
+      const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
+      const docRef = doc(db, userDocPath);
+
+      unsubscribeFromProfile = onSnapshot(
+        docRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const subscription = docSnap.data().subscription;
+            if (subscription === "Tier 1") {
+              showPremiumContent();
+            } else {
+              showSubscriptionCTA();
+            }
+          } else {
+            console.warn("User profile not found. Creating one.");
+            setDoc(docRef, {
+              email: auth.currentUser.email,
+              subscription: "None",
+            });
+            showSubscriptionCTA();
+          }
+        },
+        (error) => {
+          console.error("Error fetching user profile:", error);
+          showLoginRequired();
         }
-        .gradient-bg {
-            background-color: #1a202c;
-            background-image: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
+      );
+    }
+
+    function showLoginRequired() {
+      loginRequiredMessage.classList.remove("hidden");
+      premiumContentContainer.classList.add("hidden");
+    }
+
+    function showSubscriptionCTA() {
+      loginRequiredMessage.classList.add("hidden");
+      premiumContentContainer.classList.remove("hidden");
+      subscriptionMessage.innerHTML =
+        "Access to this content requires a premium subscription.";
+      subscribeBtn.classList.remove("hidden");
+    }
+
+    function showPremiumContent() {
+      loginRequiredMessage.classList.add("hidden");
+      premiumContentContainer.classList.remove("hidden");
+      subscriptionMessage.innerHTML = `
+        <h3 class="font-bold text-lg text-yellow-500 mb-2">
+          Welcome, Tier 1 Subscriber!
+        </h3>
+        <p>Enjoy your exclusive AI-powered insights and tools.</p>
+      `;
+      subscribeBtn.classList.add("hidden");
+    }
+
+    subscribeBtn.addEventListener("click", async () => {
+      if (userId) {
+        const userDocPath = `/artifacts/${currentAppId}/users/${userId}/profile/data`;
+        try {
+          await updateDoc(doc(db, userDocPath), {
+            subscription: "Tier 1",
+          });
+        } catch (error) {
+          console.error("Error updating subscription:", error);
+          const messageBox = document.createElement("div");
+          messageBox.className =
+            "fixed inset-0 flex items-center justify-center bg-black bg-opacity-50";
+          messageBox.innerHTML = `
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-white max-w-sm w-full text-center">
+              <p class="mb-4">Failed to update subscription. Please try again.</p>
+              <button onclick="this.parentNode.parentNode.remove()" class="btn-primary">OK</button>
+            </div>
+          `;
+          document.body.appendChild(messageBox);
         }
-        .btn-primary {
-            @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
-        }
-    </style>
+      }
+    });
+
+    // Init
+    window.onload = initializeFirebase;
+  </script>
+
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .btn-primary {
+      @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
+    }
+  </style>
 </head>
+
 <body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen">
-    <!-- Loader -->
-    <div id="loader" class="flex flex-col items-center justify-center space-y-4">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow-500"></div>
-        <p class="text-gray-400">Loading...</p>
+  <!-- Loader -->
+  <div id="loader" class="flex flex-col items-center justify-center space-y-4">
+    <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow-500"></div>
+    <p class="text-gray-400">Loading...</p>
+  </div>
+
+  <main id="main-container" class="hidden container mx-auto px-4 sm:px-6 lg:px-8 max-w-2xl">
+    <!-- Not Logged In -->
+    <div id="login-required-message" class="hidden bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 text-center">
+      <h2 class="text-2xl font-bold text-gray-100 mb-4">Access Denied</h2>
+      <p class="text-gray-400 mb-6">You must be logged in to view this content.</p>
+      <a href="./index.html" class="btn-primary">Go to Login Page</a>
     </div>
 
-    <main id="main-container" class="hidden container mx-auto px-4 sm:px-6 lg:px-8 max-w-2xl">
-        <!-- Not Logged In Message -->
-        <div id="login-required-message" class="hidden bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 text-center">
-            <h2 class="text-2xl font-bold text-gray-100 mb-4">Access Denied</h2>
-            <p class="text-gray-400 mb-6">
-                You must be logged in to view this content.
-            </p>
-            <a href="./index.html" class="btn-primary">Go to Login Page</a>
-        </div>
-
-        <!-- Premium Content Container -->
-        <div id="premium-content-container" class="hidden bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 text-center">
-            <h2 class="text-2xl font-bold text-gray-100 mb-4">AI-Powered Insights</h2>
-            <div id="subscription-message" class="bg-gray-900 p-6 rounded-xl mb-6">
-                <!-- Message will be dynamically updated by JS -->
-            </div>
-            <button id="subscribe-btn" class="w-full btn-primary">Subscribe to Tier 1 Now</button>
-        </div>
-    </main>
+    <!-- Premium Content -->
+    <div id="premium-content-container" class="hidden bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 text-center">
+      <h2 class="text-2xl font-bold text-gray-100 mb-4">AI-Powered Insights</h2>
+      <div id="subscription-message" class="bg-gray-900 p-6 rounded-xl mb-6"></div>
+      <button id="subscribe-btn" class="w-full btn-primary">Subscribe to Tier 1 Now</button>
+    </div>
+  </main>
 </body>
 </html>
