@@ -1,409 +1,479 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Creator Accounts - Login</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module">
-        // Import the necessary Firebase SDKs
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator Accounts - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        // Import the necessary Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, updateEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
-            authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
-            projectId: "forefront-ugc-subscriptions",
-            storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
-            messagingSenderId: "988222732912",
-            appId: "1:988222732912:web:151a0b709106dfc67692b5",
-            measurementId: "G-ZXHZ4T2VKS"
-        };
-        
-        const appId = "ugc-hub-app";
-        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
-        const firebaseCustomConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
+            authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
+            projectId: "forefront-ugc-subscriptions",
+            storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
+            messagingSenderId: "988222732912",
+            appId: "1:988222732912:web:151a0b709106dfc67692b5",
+            measurementId: "G-ZXHZ4T2VKS"
+        };
+        
+        const appId = "ugc-hub-app";
+        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
+        const firebaseCustomConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
 
-        let auth, db;
-        let userId = '';
+        let auth, db;
+        let userId = '';
 
-        // UI Elements
-        const loggedInContainer = document.getElementById('logged-in-container');
-        const loggedOutContainer = document.getElementById('logged-out-container');
-        const userEmailDisplay = document.getElementById('user-email');
-        const userDisplayId = document.getElementById('user-id-display');
-        const userSubscriptionDisplay = document.getElementById('user-subscription');
-        const subscribeBtn = document.getElementById('subscribe-btn');
-        const pageLinks = document.querySelectorAll('.page-link');
-        const contentPages = {
-            'hidden-page-1': document.getElementById('hidden-page-1'),
-            'hidden-page-2': document.getElementById('hidden-page-2')
-        };
-        const loginForm = document.getElementById('login-form');
-        const errorContainer = document.getElementById('error-container');
-        const errorMessage = document.getElementById('error-message');
-        const googleSignInBtn = document.getElementById('google-signin-btn');
+        // UI Elements
+        const loggedInContainer = document.getElementById('logged-in-container');
+        const loggedOutContainer = document.getElementById('logged-out-container');
+        const userEmailDisplay = document.getElementById('user-email');
+        const userDisplayId = document.getElementById('user-id-display');
+        const userSubscriptionDisplay = document.getElementById('user-subscription');
+        const subscribeBtn = document.getElementById('subscribe-btn');
+        const pageLinks = document.querySelectorAll('.page-link');
+        const profileForm = document.getElementById('profile-form');
+        const profileEmailInput = document.getElementById('profile-email');
+        const profileSubscriptionInput = document.getElementById('profile-subscription');
+        const profilePage = document.getElementById('hidden-page-3');
 
-        // Main function to initialize Firebase and set up auth listener
-        async function initializeFirebase() {
-            try {
-                const app = initializeApp(firebaseCustomConfig);
-                const analytics = getAnalytics(app);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                setLogLevel('debug');
+        const contentPages = {
+            'hidden-page-1': document.getElementById('hidden-page-1'),
+            'hidden-page-2': document.getElementById('hidden-page-2'),
+            'hidden-page-3': profilePage
+        };
 
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+        const loginForm = document.getElementById('login-form');
+        const errorContainer = document.getElementById('error-container');
+        const errorMessage = document.getElementById('error-message');
+        const googleSignInBtn = document.getElementById('google-signin-btn');
 
-                onAuthStateChanged(auth, async (user) => {
-                    if (user && user.isAnonymous === false) {
-                        userId = user.uid;
-                        userDisplayId.textContent = userId;
-                        userEmailDisplay.textContent = user.email || 'N/A';
-                        await fetchUserData(userId);
-                        showLoggedInState();
-                    } else if (user && user.isAnonymous) {
-                        userId = user.uid;
-                        userDisplayId.textContent = userId;
-                        userEmailDisplay.textContent = 'Anonymous';
-                        userSubscriptionDisplay.textContent = 'None';
-                        renderPremiumLinks('None');
-                        showLoggedOutState();
-                    } else {
-                        showLoggedOutState();
-                    }
-                });
-            } catch (error) {
-                console.error("Firebase initialization or auth error:", error);
-                showError("Failed to initialize the application. Please check the console for details.");
-            }
-        }
+        // Main function to initialize Firebase and set up auth listener
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseCustomConfig);
+                const analytics = getAnalytics(app);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                setLogLevel('debug');
 
-        async function fetchUserData(uid) {
-            const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
-            const docRef = doc(db, userDocPath);
-            const docSnap = await getDoc(docRef);
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
-            if (!docSnap.exists()) {
-                await setDoc(docRef, { email: auth.currentUser.email, subscription: 'None' });
-                userSubscriptionDisplay.textContent = 'None';
-                renderPremiumLinks('None');
-            } else {
-                const userData = docSnap.data();
-                userSubscriptionDisplay.textContent = userData.subscription || 'None';
-                renderPremiumLinks(userData.subscription);
-            }
-        }
+                onAuthStateChanged(auth, async (user) => {
+                    if (user && user.isAnonymous === false) {
+                        userId = user.uid;
+                        userDisplayId.textContent = userId;
+                        userEmailDisplay.textContent = user.email || 'N/A';
+                        await fetchUserData(userId);
+                        await loadUserProfileData(user);
+                        showLoggedInState();
+                    } else if (user && user.isAnonymous) {
+                        userId = user.uid;
+                        userDisplayId.textContent = userId;
+                        userEmailDisplay.textContent = 'Anonymous';
+                        userSubscriptionDisplay.textContent = 'None';
+                        renderPremiumLinks('None');
+                        showLoggedOutState();
+                    } else {
+                        showLoggedOutState();
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization or auth error:", error);
+                showError("Failed to initialize the application. Please check the console for details.");
+            }
+        }
 
-        function showLoggedInState() {
-            loggedInContainer.classList.remove('hidden');
-            loggedOutContainer.classList.add('hidden');
-        }
+        async function fetchUserData(uid) {
+            const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
+            const docRef = doc(db, userDocPath);
+            const docSnap = await getDoc(docRef);
 
-        function showLoggedOutState() {
-            loggedInContainer.classList.add('hidden');
-            loggedOutContainer.classList.remove('hidden');
-        }
-        
-        function renderPremiumLinks(subscriptionTier) {
-            document.getElementById('link-page-1').classList.remove('hidden');
-            document.getElementById('link-page-2').classList.remove('hidden');
+            if (!docSnap.exists()) {
+                await setDoc(docRef, { email: auth.currentUser.email, subscription: 'None' });
+                userSubscriptionDisplay.textContent = 'None';
+                renderPremiumLinks('None');
+            } else {
+                const userData = docSnap.data();
+                userSubscriptionDisplay.textContent = userData.subscription || 'None';
+                renderPremiumLinks(userData.subscription);
+            }
+        }
 
-            if (subscriptionTier === 'Tier 1') {
-                document.getElementById('link-premium-content').classList.remove('hidden');
-                document.getElementById('link-tier-1').classList.remove('hidden');
-                subscribeBtn.classList.add('hidden');
-            } else {
-                document.getElementById('link-premium-content').classList.add('hidden');
-                document.getElementById('link-tier-1').classList.add('hidden');
-                subscribeBtn.classList.remove('hidden');
-            }
-        }
+        async function loadUserProfileData(user) {
+            const userDocPath = `/artifacts/${currentAppId}/users/${user.uid}/profile/data`;
+            const docRef = doc(db, userDocPath);
+            const docSnap = await getDoc(docRef);
 
-        pageLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetPageId = e.target.dataset.target;
-                
-                Object.values(contentPages).forEach(page => page.classList.add('hidden'));
-                
-                const targetPage = document.getElementById(targetPageId);
-                if (targetPage) {
-                    targetPage.classList.remove('hidden');
-                }
-            });
-        });
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                profileEmailInput.value = user.email || '';
+                profileSubscriptionInput.value = data.subscription || 'None';
+            }
+        }
 
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = e.target.email.value;
-            const password = e.target.password.value;
+        function showLoggedInState() {
+            loggedInContainer.classList.remove('hidden');
+            loggedOutContainer.classList.add('hidden');
+        }
 
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                loginForm.reset();
-                showError('', false);
-            } catch (error) {
-                console.error("Login error:", error);
-                showError(error.message);
-            }
-        });
+        function showLoggedOutState() {
+            loggedInContainer.classList.add('hidden');
+            loggedOutContainer.classList.remove('hidden');
+        }
+        
+        function renderPremiumLinks(subscriptionTier) {
+            document.getElementById('link-my-profile').classList.remove('hidden');
+            document.getElementById('link-page-1').classList.remove('hidden');
+            document.getElementById('link-page-2').classList.remove('hidden');
 
-        async function connectWithGoogle() {
-            const provider = new GoogleAuthProvider();
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                console.error("Google OAuth error:", error);
-                showError("Google sign-in failed. Please try again.");
-            }
-        }
-        
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                showError('', false);
-            } catch (error) {
-                console.error("Logout error:", error);
-                showError("Logout failed. Please try again.");
-            }
-        });
+            if (subscriptionTier === 'Tier 1') {
+                document.getElementById('link-premium-content').classList.remove('hidden');
+                document.getElementById('link-tier-1').classList.remove('hidden');
+                subscribeBtn.classList.add('hidden');
+            } else {
+                document.getElementById('link-premium-content').classList.add('hidden');
+                document.getElementById('link-tier-1').classList.add('hidden');
+                subscribeBtn.classList.remove('hidden');
+            }
+        }
 
-        function showError(message, isError = true) {
-            errorMessage.textContent = message;
-            if (isError && message) {
-                errorContainer.classList.remove('hidden');
-            } else {
-                errorContainer.classList.add('hidden');
-            }
-        }
-        
-        if (googleSignInBtn) {
-            googleSignInBtn.addEventListener('click', connectWithGoogle);
-        }
+        pageLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetPageId = e.target.dataset.target;
+                
+                Object.values(contentPages).forEach(page => page.classList.add('hidden'));
+                
+                const targetPage = document.getElementById(targetPageId);
+                if (targetPage) {
+                    targetPage.classList.remove('hidden');
+                }
+            });
+        });
 
-        initializeFirebase();
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = e.target.email.value;
+            const password = e.target.password.value;
 
-        document.getElementById('get-started-btn').addEventListener('click', () => {
-            document.getElementById('forms-section').scrollIntoView({ behavior: 'smooth' });
-        });
-    </script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                loginForm.reset();
+                showError('', false);
+            } catch (error) {
+                console.error("Login error:", error);
+                showError(error.message);
+            }
+        });
 
-        .gradient-bg {
-            background-color: #1a202c;
-            background-image: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
-        }
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        .btn-primary {
-            @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
-        }
-        
-        .btn-secondary {
-            @apply bg-transparent text-gray-400 font-semibold py-3 px-6 rounded-xl border border-gray-400 shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-gray-400 hover:text-white;
-        }
+            const newEmail = profileEmailInput.value;
+            const newSubscription = profileSubscriptionInput.value;
 
-        .nav-link {
-            @apply text-gray-400 hover:text-yellow-400 transition duration-300;
-        }
-    </style>
+            try {
+                if (!auth.currentUser) {
+                    throw new Error("No authenticated user found.");
+                }
+
+                const user = auth.currentUser;
+                const userDocPath = `/artifacts/${currentAppId}/users/${user.uid}/profile/data`;
+                const docRef = doc(db, userDocPath);
+
+                // Update email in Firebase Auth
+                await updateEmail(user, newEmail);
+                userEmailDisplay.textContent = newEmail;
+
+                // Update subscription in Firestore
+                await updateDoc(docRef, { subscription: newSubscription });
+                userSubscriptionDisplay.textContent = newSubscription;
+
+                showError("Profile updated successfully!", false);
+            } catch (error) {
+                console.error("Profile update error:", error);
+                showError(error.message);
+            }
+        });
+
+        async function connectWithGoogle() {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Google OAuth error:", error);
+                showError("Google sign-in failed. Please try again.");
+            }
+        }
+        
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showError('', false);
+            } catch (error) {
+                console.error("Logout error:", error);
+                showError("Logout failed. Please try again.");
+            }
+        });
+
+        function showError(message, isError = true) {
+            errorMessage.textContent = message;
+            if (isError && message) {
+                errorContainer.classList.remove('hidden');
+            } else {
+                errorContainer.classList.add('hidden');
+            }
+        }
+        
+        if (googleSignInBtn) {
+            googleSignInBtn.addEventListener('click', connectWithGoogle);
+        }
+
+        initializeFirebase();
+
+        document.getElementById('get-started-btn').addEventListener('click', () => {
+            document.getElementById('forms-section').scrollIntoView({ behavior: 'smooth' });
+        });
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .gradient-bg {
+            background-color: #1a202c;
+            background-image: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
+        }
+
+        .btn-primary {
+            @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
+        }
+        
+        .btn-secondary {
+            @apply bg-transparent text-gray-400 font-semibold py-3 px-6 rounded-xl border border-gray-400 shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-gray-400 hover:text-white;
+        }
+
+        .nav-link {
+            @apply text-gray-400 hover:text-yellow-400 transition duration-300;
+        }
+    </style>
 </head>
 <body class="bg-gray-900 text-gray-200">
-        <nav class="w-full bg-gray-800 shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div class="flex items-center">
-                <span class="text-3xl font-bold text-gray-100">
-                    <span class="text-yellow-500">UGC</span><span class="text-gray-400">Hub</span>
-                </span>
-            </div>
-            <div class="hidden md:flex items-center space-x-8">
-                <a href="#features-section" class="nav-link">Features</a>
-                <a href="#forms-section" class="btn-primary text-sm">Sign Up / Login</a>
-            </div>
-        </div>
-    </nav>
+    <nav class="w-full bg-gray-800 shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <span class="text-3xl font-bold text-gray-100">
+                    <span class="text-yellow-500">UGC</span><span class="text-gray-400">Hub</span>
+                </span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#features-section" class="nav-link">Features</a>
+                <a href="#forms-section" class="btn-primary text-sm">Sign Up / Login</a>
+            </div>
+        </div>
+    </nav>
 
-        <header class="gradient-bg py-16 md:py-24">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
-            <h1 class="text-4xl sm:text-5xl lg:text-7xl font-extrabold leading-tight mb-4 max-w-4xl text-gray-100">
-                Turn Your Content into Gold.
-            </h1>
-            <p class="text-lg sm:text-xl text-gray-400 mb-8 max-w-3xl">
-                The ultimate platform for User-Generated Content creators to manage, monetize, and grow their portfolio with exclusive tools and resources.
-            </p>
-            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <button id="get-started-btn" class="btn-primary">Get Started</button>
-            </div>
-        </div>
-    </header>
+    <header class="gradient-bg py-16 md:py-24">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
+            <h1 class="text-4xl sm:text-5xl lg:text-7xl font-extrabold leading-tight mb-4 max-w-4xl text-gray-100">
+                Turn Your Content into Gold.
+            </h1>
+            <p class="text-lg sm:text-xl text-gray-400 mb-8 max-w-3xl">
+                The ultimate platform for User-Generated Content creators to manage, monetize, and grow their portfolio with exclusive tools and resources.
+            </p>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <button id="get-started-btn" class="btn-primary">Get Started</button>
+            </div>
+        </div>
+    </header>
 
-        <section id="features-section" class="bg-gray-800 py-16 md:py-24">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 mb-4">
-                Features Designed for Creators
-            </h2>
-            <p class="text-lg text-gray-400 mb-12 max-w-3xl mx-auto">
-                Discover the tools you need to take your UGC game to the next level.
-            </p>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
-                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-100 mb-2">Personalized Dashboard</h3>
-                    <p class="text-gray-400">
-                        Manage your content, view analytics, and track your earnings all in one place.
-                    </p>
-                </div>
-                                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
-                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c-.379-.283-.497-.732-.322-1.125a1.868 1.868 0 0 1 1.765-1.053H18.75" />
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-100 mb-2">Exclusive Tools</h3>
-                    <p class="text-gray-400">
-                        Access premium tools to streamline your creative process and boost your productivity.
-                    </p>
-                </div>
-                                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
-                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.5 3.133 2.75 7.125 2.75 3.992 0 7.125-1.25 7.125-2.75m-9.75-3h9m-9-3h9m-9.75 3A.75.75 0 0 1 12 12c.382 0 .75.368.75.75-.008.382-.375.75-.75.75h-.008Zm9.75-3a.75.75 0 0 1-.75.75c-.382 0-.75-.368-.75-.75.008-.382.375-.75.75-.75h.008Z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-100 mb-2">Community & Support</h3>
-                    <p class="text-gray-400">
-                        Join a vibrant community of creators and get dedicated support to answer your questions.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
+    <section id="features-section" class="bg-gray-800 py-16 md:py-24">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 mb-4">
+                Features Designed for Creators
+            </h2>
+            <p class="text-lg text-gray-400 mb-12 max-w-3xl mx-auto">
+                Discover the tools you need to take your UGC game to the next level.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
+                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-100 mb-2">Personalized Dashboard</h3>
+                    <p class="text-gray-400">
+                        Manage your content, view analytics, and track your earnings all in one place.
+                    </p>
+                </div>
+                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
+                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c-.379-.283-.497-.732-.322-1.125a1.868 1.868 0 0 1 1.765-1.053H18.75" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-100 mb-2">Exclusive Tools</h3>
+                    <p class="text-gray-400">
+                        Access premium tools to streamline your creative process and boost your productivity.
+                    </p>
+                </div>
+                <div class="bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-700 text-left">
+                    <div class="flex items-center justify-center bg-gray-700 rounded-full w-16 h-16 mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-yellow-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.5 3.133 2.75 7.125 2.75 3.992 0 7.125-1.25 7.125-2.75m-9.75-3h9m-9-3h9m-9.75 3A.75.75 0 0 1 12 12c.382 0 .75.368.75.75-.008.382-.375.75-.75.75h-.008Zm9.75-3a.75.75 0 0 1-.75.75c-.382 0-.75-.368-.75-.75.008-.382.375-.75.75-.75h.008Z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-100 mb-2">Community & Support</h3>
+                    <p class="text-gray-400">
+                        Join a vibrant community of creators and get dedicated support to answer your questions.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        <section id="forms-section" class="gradient-bg py-16 md:py-24 flex items-center justify-incenter">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 text-center mb-12">
-                Log In
-            </h2>
-            <div id="error-container" class="hidden mb-6 p-4 rounded-xl bg-red-800 text-red-200">
-                <p id="error-message" class="text-sm font-medium"></p>
-            </div>
+    <section id="forms-section" class="gradient-bg py-16 md:py-24 flex items-center justify-center">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 text-center mb-12">
+                Log In
+            </h2>
+            <div id="error-container" class="hidden mb-6 p-4 rounded-xl bg-red-800 text-red-200">
+                <p id="error-message" class="text-sm font-medium"></p>
+            </div>
 
-                        <div id="logged-in-container" class="hidden w-full">
-                <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
-                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
-                        <h2 class="text-2xl font-bold text-gray-100 mb-4 sm:mb-0">
-                            Welcome back, <span id="user-email" class="text-yellow-500"></span>!
-                        </h2>
-                        <button id="logout-btn" class="btn-primary text-sm px-4 py-2">Log Out</button>
-                    </div>
-                    <div class="mb-8">
-                        <p class="text-sm text-gray-500 mt-2">
-                            Your User ID: <span id="user-id-display"></span>
-                        </p>
-                        <p class="text-sm text-gray-500 mt-2">
-                            Subscription Status: <span id="user-subscription" class="font-bold text-yellow-400"></span>
-                        </p>
-                    </div>
+            <div id="logged-in-container" class="hidden w-full">
+                <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-100 mb-4 sm:mb-0">
+                            Welcome back, <span id="user-email" class="text-yellow-500"></span>!
+                        </h2>
+                        <button id="logout-btn" class="btn-secondary text-sm px-4 py-2">Log Out</button>
+                    </div>
+                    <div class="mb-8">
+                        <p class="text-sm text-gray-500 mt-2">
+                            Your User ID: <span id="user-id-display"></span>
+                        </p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            Subscription Status: <span id="user-subscription" class="font-bold text-yellow-400"></span>
+                        </p>
+                    </div>
 
-                                        <div id="subscribe-container">
-                         <a href="./premium_content.html" id="subscribe-btn" class="w-full btn-primary text-center block mt-6">
-                            Email Drafting Agent
-                        </a>
-                    </div>
-                    
-                                        <nav class="my-8">
-                        <ul class="flex flex-wrap sm:flex-nowrap justify-center space-x-4">
-                            <li class="page-link hidden" id="link-page-1">
-                                <button data-target="hidden-page-1" class="btn-primary">Creator Hub</button>
-                            </li>
-                            <li class="page-link hidden" id="link-page-2">
-                                <button data-target="hidden-page-2" class="btn-primary">Advanced Analytics</button>
-                            </li>
-                            <li id="link-premium-content" class="hidden">
-                                <a href="./premium_content.html" class="btn-primary">AI-Powered Insights (Premium)</a>
-                            </li>
-                             <li id="link-tier-1" class="hidden">
-                                <a href="./tier1.html" class="btn-primary">Tier 1 Dashboard</a>
-                            </li>
-                        </ul>
-                    </nav>
+                    <div id="subscribe-container">
+                       <a href="./premium_content.html" id="subscribe-btn" class="w-full btn-primary text-center block mt-6">
+                            Subscribe to Tier 1
+                        </a>
+                    </div>
+                    
+                    <nav class="my-8">
+                        <ul class="flex flex-wrap sm:flex-nowrap justify-center space-x-4">
+                            <li class="page-link hidden" id="link-page-1">
+                                <button data-target="hidden-page-1" class="btn-primary">Creator Hub</button>
+                            </li>
+                            <li class="page-link hidden" id="link-page-2">
+                                <button data-target="hidden-page-2" class="btn-primary">Advanced Analytics</button>
+                            </li>
+                            <li class="page-link hidden" id="link-my-profile">
+                                <button data-target="hidden-page-3" class="btn-primary">My Profile</button>
+                            </li>
+                            <li id="link-premium-content" class="hidden">
+                                <a href="./premium_content.html" class="btn-primary">AI-Powered Insights (Premium)</a>
+                            </li>
+                             <li id="link-tier-1" class="hidden">
+                                <a href="./tier1.html" class="btn-primary">Tier 1 Dashboard</a>
+                            </li>
+                        </ul>
+                    </nav>
 
-                                        <div id="tiers-container">
-                        <div id="hidden-page-1" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700">
-                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Creator Hub (All Users)</h4>
-                            <p class="text-gray-400">
-                                This page is accessible to all signed-in creators and contains our essential tools for content creation. Here you'll find the basic dashboard and file management systems.
-                            </p>
-                        </div>
-                        
-                        <div id="hidden-page-2" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
-                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Advanced Analytics (All Users)</h4>
-                            <p class="text-gray-400">
-                                This content features detailed analytics on content performance, audience demographics, and revenue tracking.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    <div id="tiers-container">
+                        <div id="hidden-page-1" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700">
+                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Creator Hub (All Users)</h4>
+                            <p class="text-gray-400">
+                                This page is accessible to all signed-in creators and contains our essential tools for content creation. Here you'll find the basic dashboard and file management systems.
+                            </p>
+                        </div>
+                        
+                        <div id="hidden-page-2" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
+                            <h4 class="font-bold text-yellow-500 text-lg mb-2">Advanced Analytics (All Users)</h4>
+                            <p class="text-gray-400">
+                                This content features detailed analytics on content performance, audience demographics, and revenue tracking.
+                            </p>
+                        </div>
 
-                        <div id="logged-out-container" class="w-full max-w-md mx-auto">
-                <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
-                    <h2 class="text-2xl font-bold text-gray-100 text-center mb-6">Log In</h2>
-                    <form id="login-form" class="space-y-6">
-                        <div>
-                            <label for="login-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
-                            <input type="email" id="login-email" name="email" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
-                        </div>
-                        <div>
-                            <label for="login-password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
-                            <input type="password" id="login-password" name="password" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
-                        </div>
-                        <button type="submit" class="w-full btn-primary mt-6">Log In</button>
-                    </form>
+                        <div id="hidden-page-3" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
+                            <h4 class="font-bold text-yellow-500 text-lg mb-2">My Profile</h4>
+                            <p class="text-gray-400 mb-4">Update your profile information below.</p>
+                            <form id="profile-form" class="space-y-4">
+                                <div>
+                                    <label for="profile-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                                    <input type="email" id="profile-email" placeholder="New Email Address" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300">
+                                </div>
+                                <div>
+                                    <label for="profile-subscription" class="block text-sm font-medium text-gray-400 mb-1">Subscription Status</label>
+                                    <input type="text" id="profile-subscription" placeholder="New Subscription Status (e.g., Tier 1, None)" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300">
+                                </div>
+                                <button type="submit" class="w-full btn-primary mt-6">Update Profile</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                    <div class="relative flex items-center justify-center py-4">
-                        <div class="w-full h-px bg-gray-600"></div>
-                        <span class="absolute px-4 text-sm text-gray-500 bg-gray-800">or</span>
-                    </div>
+            <div id="logged-out-container" class="w-full max-w-md mx-auto">
+                <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+                    <h2 class="text-2xl font-bold text-gray-100 text-center mb-6">Log In</h2>
+                    <form id="login-form" class="hidden space-y-6">
+                        <div>
+                            <label for="login-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                            <input type="email" id="login-email" name="email" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                        </div>
+                        <div>
+                            <label for="login-password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                            <input type="password" id="login-password" name="password" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
+                        </div>
+                        <button type="submit" class="w-full btn-primary mt-6">Log In</button>
+                    </form>
 
-                                        <button
-                        id="google-signin-btn"
-                        class="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white font-medium py-3 px-4 rounded-full shadow-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-                                                <svg class="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M44.5 20H24V28.5H35.5C34.5 31.9 31.5 35 24 35C16.5 35 10.5 28.9 10.5 21.5C10.5 14.1 16.5 8 24 8C27.9 8 31.5 9.4 34 12L39.5 6.5C35.5 2.5 30.5 0 24 0C10.8 0 0 10.8 0 24C0 37.2 10.8 48 24 48C37.2 48 48 37.2 48 24C48 22.3 47.8 20.7 47.5 19H44.5V20Z" fill="#FFC107"/>
-                            <path d="M24 8V0C30.5 0 35.5 2.5 39.5 6.5L34 12C31.5 9.4 27.9 8 24 8Z" fill="#FF3D00"/>
-                            <path d="M0 24C0 26.6 0.4 29.1 1.2 31.5L8.2 26.3C7.4 24.3 7 22.2 7 20C7 17.8 7.4 15.7 8.2 13.7L1.2 8.5C0.4 10.9 0 13.4 0 16V24Z" fill="#4CAF50"/>
-                            <path d="M44.5 20H24V28.5H35.5C34.5 31.9 31.5 35 24 35C16.5 35 10.5 33.9 10.5 26.5L10.5 26.5Z" fill="#1976D2"/>
-                        </svg>
-                        <span>Sign in with Google</span>
-                    </button>
+                    <div class="relative flex items-center justify-center py-4">
+                        <div class="w-full h-px bg-gray-600 hidden"></div>
+                        <span class="absolute px-4 text-sm text-gray-500 bg-gray-800 hidden">or</span>
+                    </div>
 
-                    <p class="text-center text-sm text-gray-400 mt-6">
-                        Don't have an account? 
-                        <a href="./signup.html" class="text-yellow-500 hover:underline">Create Account</a>
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
+                    <button
+                        id="google-signin-btn"
+                        class="w-full flex items-center justify-center space-x-2 bg-gray-700 text-yellow-500 font-medium py-3 px-4 rounded-full shadow-lg hover:bg-gray-600 transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50">
+                        <svg class="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M44.5 20H24V28.5H35.5C34.5 31.9 31.5 35 24 35C16.5 35 10.5 28.9 10.5 21.5C10.5 14.1 16.5 8 24 8C27.9 8 31.5 9.4 34 12L39.5 6.5C35.5 2.5 30.5 0 24 0C10.8 0 0 10.8 0 24C0 37.2 10.8 48 24 48C37.2 48 48 37.2 48 24C48 22.3 47.8 20.7 47.5 19H44.5V20Z" fill="#FFC107"/>
+                            <path d="M24 8V0C30.5 0 35.5 2.5 39.5 6.5L34 12C31.5 9.4 27.9 8 24 8Z" fill="#FF3D00"/>
+                            <path d="M0 24C0 26.6 0.4 29.1 1.2 31.5L8.2 26.3C7.4 24.3 7 22.2 7 20C7 17.8 7.4 15.7 8.2 13.7L1.2 8.5C0.4 10.9 0 13.4 0 16V24Z" fill="#4CAF50"/>
+                            <path d="M44.5 20H24V28.5H35.5C34.5 31.9 31.5 35 24 35C16.5 35 10.5 33.9 10.5 26.5L10.5 26.5Z" fill="#1976D2"/>
+                        </svg>
+                        <span>Sign in with Google</span>
+                    </button>
+
+                    <p class="text-center text-sm text-gray-400 mt-6 hidden">
+                        Don't have an account? 
+                        <a href="./signup.html" class="text-yellow-500 hover:underline">Create Account</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
 </body>
 </html>
