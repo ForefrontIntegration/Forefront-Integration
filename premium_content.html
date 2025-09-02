@@ -1,118 +1,212 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tier 1 Premium Content</title>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { 
-      getAuth, 
-      onAuthStateChanged, 
-      signOut 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { 
-      getFirestore, 
-      doc, 
-      getDoc 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator Accounts - Tier 1 Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        // Import the necessary Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // --- Firebase config ---
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
+            authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
+            projectId: "forefront-ugc-subscriptions",
+            storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
+            messagingSenderId: "988222732912",
+            appId: "1:988222732912:web:151a0b709106dfc67692b5",
+            measurementId: "G-ZXHZ4T2VKS"
+        };
+        
+        const appId = "ugc-hub-app";
+        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
+        const firebaseCustomConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+        
+        let auth, db;
+        let userId = '';
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+        // UI elements
+        const userEmailDisplay = document.getElementById('user-email');
+        const userDisplayId = document.getElementById('user-id-display');
+        const logoutBtn = document.getElementById('logout-btn');
+        const contentContainer = document.getElementById('tier-1-content');
+        const noAccessMessage = document.getElementById('no-access-message');
+        const loadingEl = document.getElementById('loading');
 
-    // --- Page elements ---
-    const loadingEl = document.addEventListener("DOMContentLoaded", () => {
-      const loadingEl = document.getElementById("loading");
-      const premiumContentEl = document.getElementById("premium-content");
-      const noAccessEl = document.getElementById("no-access");
-      const logoutBtn = document.getElementById("logoutBtn");
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseCustomConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                setLogLevel('debug');
 
-      // --- Auth listener ---
-      onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-          console.log("❌ No user, redirecting...");
-          setTimeout(() => window.location.href = "./index.html", 500);
-          return;
-        }
+                // Sign in with custom token if available, otherwise sign in anonymously
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
-        console.log("✅ User logged in:", user.email);
+                // Listen for authentication state changes
+                onAuthStateChanged(auth, async (user) => {
+                    if (user && user.isAnonymous === false) {
+                        userId = user.uid;
+                        userDisplayId.textContent = userId;
+                        userEmailDisplay.textContent = user.email || 'N/A';
+                       
+                        try {
+                            // Check user's subscription tier
+                            const userDocPath = `/artifacts/${currentAppId}/users/${userId}/profile/data`;
+                            const docRef = doc(db, userDocPath);
+                            const docSnap = await getDoc(docRef);
 
-        try {
-          // Fetch user profile to check subscription
-          const userRef = doc(
-            db, 
-            "artifacts", 
-            "YOUR_APP_ID", 
-            "users", 
-            user.uid, 
-            "profile", 
-            "data"
-          );
-          const userSnap = await getDoc(userRef);
+                            // Define the tiers that have access
+                            const allowedTiers = ["Tier 1", "Tier 2", "Tier 3"];
 
-          if (!userSnap.exists()) {
-            throw new Error("User profile missing");
-          }
+                            if (docSnap.exists() && allowedTiers.includes(docSnap.data().subscription)) {
+                                // User has a valid subscription, show content and listen for updates
+                                noAccessMessage.classList.add('hidden');
+                                contentContainer.classList.remove('hidden');
+                                fetchTier1Content();
+                            } else {
+                                // User is not authorized, display a message and offer to go back
+                                contentContainer.classList.add('hidden');
+                                noAccessMessage.classList.remove('hidden');
+                                console.error("User does not have a Tier 1 or higher subscription.");
+                            }
+                        } catch (error) {
+                            console.error("Error checking subscription:", error);
+                            noAccessMessage.classList.remove('hidden');
+                            contentContainer.classList.add('hidden');
+                        } finally {
+                            loadingEl.classList.add('hidden');
+                        }
+                    } else {
+                        // If no valid user session is found, redirect to the login page
+                        console.log("No authenticated user found, redirecting to login page.");
+                        window.location.href = './index.html';
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization or auth error:", error);
+            }
+        }
 
-          const sub = userSnap.data().subscription || "None";
-          console.log("📦 Subscription tier:", sub);
+        // Fetch Tier 1 exclusive content using a real-time listener
+        function fetchTier1Content() {
+            const tier1CollectionPath = `/artifacts/${currentAppId}/public/data/tier1_content`;
+            const q = collection(db, tier1CollectionPath);
+           
+            onSnapshot(q, (querySnapshot) => {
+                let contentHTML = '';
+                if (querySnapshot.empty) {
+                    contentHTML = `<p class="text-center text-gray-500">No exclusive content found. Check back later!</p>`;
+                } else {
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        contentHTML += `
+                            <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
+                                <h3 class="text-xl font-semibold text-yellow-500 mb-2">${data.title}</h3>
+                                <p class="text-gray-400">${data.description}</p>
+                            </div>
+                        `;
+                    });
+                }
+                contentContainer.innerHTML = contentHTML;
+            }, (error) => {
+                console.error("Error fetching Tier 1 content:", error);
+                contentContainer.innerHTML = `<p class="text-center text-red-400">Error loading content. Please try again later.</p>`;
+            });
+        }
+       
+        // Handle logout button click
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = './index.html';
+            } catch (error) {
+                console.error("Logout error:", error);
+            }
+        });
+       
+        initializeFirebase();
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
-          if (["Tier 1", "Tier 2", "Tier 3"].includes(sub)) {
-            premiumContentEl.classList.remove("hidden");
-          } else {
-            noAccessEl.classList.remove("hidden");
-          }
-        } catch (err) {
-          console.error("⚠️ Error fetching subscription:", err);
+        .gradient-bg {
+            background-color: #0b1a20;
+            background-image: linear-gradient(180deg, #1b262c 0%, #0b1a20 100%);
+        }
 
-          if (err.code === "permission-denied") {
-            noAccessEl.classList.remove("hidden");
-          } else {
-            alert("Unexpected error loading premium content.");
-          }
-        } finally {
-          loadingEl.classList.add("hidden");
-        }
-      });
-
-      // --- Sign out ---
-      logoutBtn.addEventListener("click", async () => {
-        await signOut(auth);
-        window.location.href = "./index.html";
-      });
-    });
-  </script>
-  <style>
-    .hidden { display: none; }
-    body { font-family: sans-serif; margin: 2rem; }
-    h1, h2 { color: #333; }
-    button { padding: 0.5rem 1rem; margin-top: 1rem; }
-  </style>
+        .btn-primary {
+            @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
+        }
+    </style>
 </head>
-<body>
-  <div id="loading" class="text-center p-6">Checking login...</div>
+<body class="bg-gray-900 text-gray-200">
+    <div id="loading" class="text-center p-6 text-xl font-medium">
+      Checking login...
+    </div>
+    <div class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl w-full space-y-8">
+            <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+                <div class="flex flex-col sm:flex-row items-center justify-between mb-8">
+                    <h1 class="text-3xl font-extrabold text-gray-100 sm:text-4xl">
+                        <span class="text-yellow-500">Tier 1</span> Dashboard
+                    </h1>
+                    <div class="flex flex-col items-center mt-4 sm:mt-0">
+                        <p class="text-sm text-gray-500 mt-2">
+                            Logged in as: <span id="user-email" class="text-gray-300"></span>
+                        </p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            Your User ID: <span id="user-id-display" class="text-gray-300"></span>
+                        </p>
+                        <button id="logout-btn" class="btn-primary mt-4 text-sm px-4 py-2">Log Out</button>
+                    </div>
+                </div>
 
-  <div id="premium-content" class="hidden">
-    <h1>Tier 1 Premium Tools</h1>
-    <p>Welcome! You have access to Tier 1 content.</p>
-    <button id="logoutBtn">Log out</button>
-  </div>
+                <hr class="border-t-2 border-gray-700 my-8">
 
-  <div id="no-access" class="hidden text-center p-6">
-    <h2>🚫 Access denied</h2>
-    <p>Your account does not have a valid subscription for this page.</p>
-    <a href="./index.html">Return to Home</a>
-  </div>
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-gray-100 text-center">
+                        <span class="text-pink-400">Research & Outreach</span> Agent
+                    </h2>
+                    <p class="text-center text-gray-400 mb-8">
+                        This agent researches companies and creates email drafts for you.
+                    </p>
+                    <div class="w-full h-[600px] rounded-xl overflow-hidden border border-gray-700">
+                        <iframe src="https://app.relevanceai.com/agents/bcbe5a/2bf5cc2a-7929-4eda-84d0-8c3c9fa9fbfb/7302844c-15b5-4e6c-a9f4-7c162fd2afd4/share?hide_tool_steps=false&hide_file_uploads=false&hide_conversation_list=false&bubble_style=agent&primary_color=%23685FFF&bubble_icon=pd%2Fchat&input_placeholder_text=Type+your+message...&hide_logo=false&hide_description=false" width="100%" height="100%" frameborder="0" allow="microphone"></iframe>
+                    </div>
+                </div>
+
+                <hr class="border-t-2 border-gray-700 my-8">
+
+                <!-- Tier 1 Exclusive Content Section -->
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-gray-100 text-center">Exclusive Tier 1 Content</h2>
+                    <div id="no-access-message" class="hidden bg-red-900/50 p-6 rounded-xl border border-red-700 text-red-200">
+                        <p class="text-center">You do not have a Tier 1 or higher subscription to view this content.</p>
+                        <p class="text-center mt-2">Please log in to an account with the correct subscription or upgrade your plan to continue.</p>
+                    </div>
+                    <div id="tier-1-content" class="space-y-4">
+                        <p class="text-center text-gray-500">Loading exclusive content...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
+
