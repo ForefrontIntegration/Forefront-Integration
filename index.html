@@ -115,9 +115,11 @@
 
             if (subscriptionTier === 'Tier 1') {
                 document.getElementById('link-premium-content').classList.remove('hidden');
+                document.getElementById('link-tier-1').classList.remove('hidden');
                 subscribeBtn.classList.add('hidden');
             } else {
                 document.getElementById('link-premium-content').classList.add('hidden');
+                document.getElementById('link-tier-1').classList.add('hidden');
                 subscribeBtn.classList.remove('hidden');
             }
         }
@@ -342,6 +344,9 @@
                             </li>
                             <li id="link-premium-content" class="hidden">
                                 <a href="./premium_content.html" class="btn-primary">AI-Powered Insights (Premium)</a>
+                            </li>
+                             <li id="link-tier-1" class="hidden">
+                                <a href="./tier1.html" class="btn-primary">Tier 1 Dashboard</a>
                             </li>
                         </ul>
                     </nav>
