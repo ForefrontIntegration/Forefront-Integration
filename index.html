@@ -243,9 +243,19 @@
 
         initializeFirebase();
 
-        document.getElementById('get-started-btn').addEventListener('click', () => {
-            document.getElementById('forms-section').scrollIntoView({ behavior: 'smooth' });
-        });
+        // Check for an error message in the URL on page load.
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const message = urlParams.get('message');
+            if (message === 'premium_access_denied') {
+                showError('You must be Tier 1 or higher to access this content.', true);
+            }
+
+            // Other page initialization
+            document.getElementById('get-started-btn').addEventListener('click', () => {
+                document.getElementById('forms-section').scrollIntoView({ behavior: 'smooth' });
+            });
+        };
     </script>
     <style>
         body {
