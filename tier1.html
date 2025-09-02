@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tier 1 AI Agent Dashboard</title>
+    <title>AI Agent Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -29,7 +29,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Use dynamic Canvas-provided variables instead of hardcoded values
         const fallbackFirebaseConfig = {
@@ -42,7 +42,6 @@
             measurementId: "G-ZXHZ4T2VKS"
         };
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackFirebaseConfig;
-        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let auth, db;
@@ -51,7 +50,6 @@
         const loadingEl = document.getElementById("loading");
         const mainContainer = document.getElementById("main-container");
         const premiumContentEl = document.getElementById("premium-content");
-        const noAccessEl = document.getElementById("no-access");
         const logoutBtn = document.getElementById("logoutBtn");
 
         async function initializeFirebase() {
@@ -70,41 +68,22 @@
                 onAuthStateChanged(auth, async (user) => {
                     loadingEl.classList.add("hidden");
                     mainContainer.classList.remove("hidden");
-                    if (!user || user.isAnonymous) {
-                        console.log("❌ No authenticated user, redirecting to login...");
-                        noAccessEl.classList.remove("hidden");
-                        return;
+                    // Check if a user is logged in
+                    if (!user) {
+                         // No user is signed in, redirect if not on a login/signup page
+                        window.location.href = './index.html';
+                    } else {
+                        console.log("✅ User logged in:", user.email || user.uid);
+                        // Show the dashboard as the user is authenticated
+                        premiumContentEl.classList.remove("hidden");
                     }
-                    console.log("✅ User logged in:", user.email || user.uid);
-                    await checkUserSubscription(user.uid);
                 });
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
                 loadingEl.classList.add("hidden");
-                noAccessEl.classList.remove("hidden");
-            }
-        }
-
-        async function checkUserSubscription(uid) {
-            try {
-                const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
-                const userRef = doc(db, userDocPath);
-                const userSnap = await getDoc(userRef);
-                const allowedTiers = ["Tier 1", "Tier 2", "Tier 3"];
-
-                if (userSnap.exists() && userSnap.data().subscription && allowedTiers.includes(userSnap.data().subscription)) {
-                    console.log("📦 Subscription tier:", userSnap.data().subscription);
-                    premiumContentEl.classList.remove("hidden");
-                    noAccessEl.classList.add("hidden");
-                } else {
-                    console.log("⚠️ Access denied. User does not have a required subscription.");
-                    premiumContentEl.classList.add("hidden");
-                    noAccessEl.classList.remove("hidden");
-                }
-            } catch (err) {
-                console.error("⚠️ Error fetching subscription:", err);
                 premiumContentEl.classList.add("hidden");
-                noAccessEl.classList.remove("hidden");
+                // Fallback to home page on error
+                window.location.href = './index.html';
             }
         }
 
@@ -129,7 +108,7 @@
         <div id="premium-content" class="container-card hidden">
             <div class="flex flex-col sm:flex-row items-center justify-between mb-8">
                 <h1 class="text-3xl font-extrabold text-gray-100 sm:text-4xl">
-                    <span class="text-yellow-500">Tier 1</span> AI Agent Dashboard
+                    <span class="text-yellow-500">AI</span> Agent Dashboard
                 </h1>
                 <button id="logoutBtn" class="btn-primary mt-4 sm:mt-0 text-sm px-4 py-2">Log out</button>
             </div>
@@ -137,17 +116,11 @@
             <hr class="border-t-2 border-gray-700 my-8">
 
             <div id="ai-agent-section" class="space-y-6">
-                <h2 class="text-2xl font-bold text-gray-100 text-center">AI Agent Dashboard</h2>
+                <h2 class="text-2xl font-bold text-gray-100 text-center">Your AI Agent</h2>
                 <div class="bg-gray-900 p-6 rounded-xl border border-gray-700 h-[600px] overflow-hidden">
                     <iframe src="https://app.relevanceai.com/agents/bcbe5a/2bf5cc2a-7929-4eda-84d0-8c3c9fa9fbfb/7302844c-15b5-4e6c-a9f4-7c162fd2afd4/share?hide_tool_steps=false&hide_file_uploads=false&hide_conversation_list=false&bubble_style=agent&primary_color=%23685FFF&bubble_icon=pd%2Fchat&input_placeholder_text=Type+your+message...&hide_logo=false&hide_description=false" width="100%" height="100%" frameborder="0" allow="microphone"></iframe>
                 </div>
             </div>
-        </div>
-
-        <div id="no-access" class="container-card hidden text-center">
-            <h2 class="text-2xl font-bold text-red-400 mb-2">🚫 Access denied</h2>
-            <p class="text-gray-400 mb-6">Your account does not have a valid subscription for this page.</p>
-            <a href="./index.html" class="btn-primary inline-block mt-6">Return to Home</a>
         </div>
     </div>
 </body>
