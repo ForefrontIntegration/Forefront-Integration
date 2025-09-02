@@ -27,24 +27,8 @@
         .hidden { display: none; }
     </style>
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Use dynamic Canvas-provided variables instead of hardcoded values
-        const fallbackFirebaseConfig = {
-            apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
-            authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
-            projectId: "forefront-ugc-subscriptions",
-            storageBucket: "forefront-ugc-subscriptions.appspot.com",
-            messagingSenderId: "988222732912",
-            appId: "1:988222732912:web:151a0b709106dfc67692b5",
-            measurementId: "G-ZXHZ4T2VKS"
-        };
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackFirebaseConfig;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let auth, db;
+        // Import Firebase objects from your authentication file
+        import { auth, signOut } from "./firebaseAuth.js";
 
         // UI elements
         const loadingEl = document.getElementById("loading");
@@ -52,50 +36,33 @@
         const premiumContentEl = document.getElementById("premium-content");
         const logoutBtn = document.getElementById("logoutBtn");
 
-        async function initializeFirebase() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                setLogLevel('debug');
-
-                onAuthStateChanged(auth, async (user) => {
-                    loadingEl.classList.add("hidden");
-                    mainContainer.classList.remove("hidden");
-                    // Check if a user is logged in
-                    if (!user) {
-                         // No user is signed in, redirect to the login page
-                        console.log("No authenticated user, redirecting to login page...");
-                        window.location.href = './login.html';
-                    } else {
-                        console.log("✅ User logged in:", user.email || user.uid);
-                        // Show the dashboard as the user is authenticated
-                        premiumContentEl.classList.remove("hidden");
-                    }
-                });
-
-                // Since we're not handling sign-in here, we don't need the custom token logic.
-                // We'll let the onAuthStateChanged listener handle the redirect if the token is missing.
-
-            } catch (error) {
-                console.error("Firebase initialization failed:", error);
+        // Use the imported auth object to check the user's state
+        function initializeAuthListener() {
+            auth.onAuthStateChanged((user) => {
                 loadingEl.classList.add("hidden");
-                premiumContentEl.classList.add("hidden");
-                // Fallback to home page on error
-                window.location.href = './login.html';
-            }
+                mainContainer.classList.remove("hidden");
+                // Check if a user is logged in and not anonymous
+                if (!user || user.isAnonymous) {
+                    console.log("No authenticated user, redirecting to login page...");
+                    window.location.href = './login.html';
+                } else {
+                    console.log("✅ User logged in:", user.email || user.uid);
+                    premiumContentEl.classList.remove("hidden");
+                }
+            });
+
+            // Set up the logout button using the imported signOut function
+            logoutBtn.addEventListener("click", async () => {
+                try {
+                    await signOut(auth);
+                    window.location.href = "./login.html";
+                } catch (error) {
+                    console.error("Logout error:", error);
+                }
+            });
         }
 
-        logoutBtn.addEventListener("click", async () => {
-            try {
-                await signOut(auth);
-                window.location.href = "./login.html";
-            } catch (error) {
-                console.error("Logout error:", error);
-            }
-        });
-
-        window.onload = initializeFirebase;
+        window.onload = initializeAuthListener;
     </script>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 text-gray-200">
