@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Creator Accounts - Tier 1 Dashboard</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Agent Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,209 +14,113 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-
         .gradient-bg {
             background-color: #0b1a20;
             background-image: linear-gradient(180deg, #1b262c 0%, #0b1a20 100%);
         }
-
         .btn-primary {
             @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
         }
+        .container-card {
+            @apply bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 max-w-4xl w-full mx-auto;
+        }
         .hidden { display: none; }
     </style>
-</head>
-<body class="bg-gray-900 text-gray-200">
-    <div id="loading" class="text-center p-6 text-xl font-medium">
-        Checking login...
-    </div>
-    
-    <div class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-4xl w-full space-y-8">
-            <div id="dashboard-container" class="hidden bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
-                <div class="flex flex-col sm:flex-row items-center justify-between mb-8">
-                    <h1 class="text-3xl font-extrabold text-gray-100 sm:text-4xl">
-                        <span class="text-yellow-500">Tier 1</span> Dashboard
-                    </h1>
-                    <div class="flex flex-col items-center mt-4 sm:mt-0">
-                        <p class="text-sm text-gray-500 mt-2">
-                            Logged in as: <span id="user-email" class="text-gray-300"></span>
-                        </p>
-                        <p class="text-sm text-gray-500 mt-2">
-                            Your User ID: <span id="user-id-display" class="text-gray-300"></span>
-                        </p>
-                        <button id="logout-btn" class="btn-primary mt-4 text-sm px-4 py-2">Log Out</button>
-                    </div>
-                </div>
-
-                <hr class="border-t-2 border-gray-700 my-8">
-
-                <div id="tier-1-content" class="space-y-6">
-                    <h2 class="text-2xl font-bold text-gray-100 text-center">Exclusive Tier 1 Content</h2>
-                    <div id="content-loader" class="text-center text-gray-500">Loading exclusive content...</div>
-                </div>
-            </div>
-
-            <div id="no-access" class="hidden text-center bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
-                <h2 class="text-2xl font-bold text-red-400">🚫 Access denied</h2>
-                <p class="mt-2 text-gray-400">Your account does not have a valid subscription for this page.</p>
-                <a href="./index.html" class="btn-primary inline-block mt-6">Return to Home</a>
-            </div>
-        </div>
-    </div>
-    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, collection, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables for Firebase
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ugc-hub-app';
-        
-        // This is the hardcoded configuration from your signup.html file.
+        // Use dynamic Canvas-provided variables instead of hardcoded values
         const fallbackFirebaseConfig = {
             apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
             authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
             projectId: "forefront-ugc-subscriptions",
-            storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
+            storageBucket: "forefront-ugc-subscriptions.appspot.com",
             messagingSenderId: "988222732912",
             appId: "1:988222732912:web:151a0b709106dfc67692b5",
             measurementId: "G-ZXHZ4T2VKS"
         };
-        const firebaseConfig = typeof __firebase_config !== 'undefined' && Object.keys(JSON.parse(__firebase_config)).length > 0 ? JSON.parse(__firebase_config) : fallbackFirebaseConfig;
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackFirebaseConfig;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let auth, db;
 
         // UI elements
-        const loadingEl = document.getElementById('loading');
-        const dashboardContainer = document.getElementById('dashboard-container');
-        const noAccessEl = document.getElementById('no-access');
-        const userEmailDisplay = document.getElementById('user-email');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const logoutBtn = document.getElementById('logout-btn');
-        const tier1ContentEl = document.getElementById('tier-1-content');
+        const loadingEl = document.getElementById("loading");
+        const mainContainer = document.getElementById("main-container");
+        const premiumContentEl = document.getElementById("premium-content");
+        const logoutBtn = document.getElementById("logoutBtn");
 
-        let auth, db, userId = '';
-
-        // This function handles the core logic after Firebase is initialized
-        async function handleAuthState(user) {
-            loadingEl.classList.add('hidden');
-            if (!user) {
-                // No valid authenticated user, redirect to login
-                console.log("❌ No authenticated user, redirecting to login page.");
-                window.location.href = './index.html';
-                return;
-            }
-
-            console.log("✅ User logged in:", user.email || 'Anonymous');
-            userId = user.uid;
-            userIdDisplay.textContent = userId;
-            userEmailDisplay.textContent = user.email || 'N/A';
-            
-            try {
-                // Fetch user profile to check subscription
-                const userDocPath = `/artifacts/${appId}/users/${userId}/profile/data`;
-                const userRef = doc(db, userDocPath);
-                const userSnap = await getDoc(userRef);
-                const userData = userSnap.data();
-
-                const allowedTiers = ["Tier 1", "Tier 2", "Tier 3"];
-                // CRITICAL FIX: Check if userData and the subscription field exist before checking the value.
-                if (userSnap.exists() && userData && allowedTiers.includes(userData.subscription)) {
-                    console.log("📦 Subscription tier:", userData.subscription);
-                    dashboardContainer.classList.remove("hidden");
-                    noAccessEl.classList.add("hidden");
-                    fetchTier1Content();
-                } else {
-                    console.log("⚠️ Access denied. User does not have a required subscription.");
-                    dashboardContainer.classList.add("hidden");
-                    noAccessEl.classList.remove("hidden");
-                }
-            } catch (err) {
-                console.error("⚠️ Error fetching subscription:", err);
-                dashboardContainer.classList.add("hidden");
-                noAccessEl.classList.remove("hidden");
-            }
-        }
-
-        // Fetch Tier 1 exclusive content using a real-time listener
-        function fetchTier1Content() {
-            const tier1CollectionPath = `/artifacts/${appId}/public/data/tier1_content`;
-            const q = collection(db, tier1CollectionPath);
-            
-            onSnapshot(q, (querySnapshot) => {
-                let contentHTML = '';
-                if (querySnapshot.empty) {
-                    contentHTML = `<p class="text-center text-gray-500">No exclusive content found. Check back later!</p>`;
-                } else {
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        contentHTML += `
-                            <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
-                                <h3 class="text-xl font-semibold text-yellow-500 mb-2">${data.title}</h3>
-                                <p class="text-gray-400">${data.description}</p>
-                            </div>
-                        `;
-                    });
-                }
-                tier1ContentEl.innerHTML = contentHTML;
-            }, (error) => {
-                console.error("Error fetching Tier 1 content:", error);
-                tier1ContentEl.innerHTML = `<p class="text-center text-red-400">Error loading content. Please try again later.</p>`;
-            });
-        }
-        
-        // Main initialization logic
-        async function initApp() {
-            if (!firebaseConfig) {
-                const errorMessage = "❌ Firebase configuration is invalid or missing. Please ensure it's correctly provided.";
-                console.error(errorMessage);
-                loadingEl.innerHTML = `<div class="p-4 bg-red-800 rounded-xl border border-red-700"><p class="font-bold text-red-200">❌ Error!</p><p class="text-red-300 mt-2">Firebase configuration is missing or invalid. Please check the project settings.</p></div>`;
-                loadingEl.classList.remove('hidden');
-                return;
-            }
-
+        async function initializeFirebase() {
             try {
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 setLogLevel('debug');
-                
-                onAuthStateChanged(auth, handleAuthState);
 
-                if (typeof __initial_auth_token !== 'undefined') {
-                    try {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } catch (error) {
-                        console.error("Custom token sign-in failed, falling back to anonymous.", error);
-                        if (error.code === 'auth/invalid-api-key') {
-                            loadingEl.innerHTML = `<div class="p-4 bg-red-800 rounded-xl border border-red-700"><p class="font-bold text-red-200">❌ Initialization Failed</p><p class="text-red-300 mt-2">The provided Firebase API key is invalid. Please ensure the project settings are correct and try again.</p></div>`;
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    }
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                logoutBtn.addEventListener('click', async () => {
-                    try {
-                        await signOut(auth);
-                        window.location.href = './index.html';
-                    } catch (error) {
-                        console.error("Logout error:", error);
+                onAuthStateChanged(auth, async (user) => {
+                    loadingEl.classList.add("hidden");
+                    mainContainer.classList.remove("hidden");
+                    // Check if a user is logged in
+                    if (!user) {
+                         // No user is signed in, redirect to the login page
+                        console.log("No authenticated user, redirecting to login page...");
+                        window.location.href = './login.html';
+                    } else {
+                        console.log("✅ User logged in:", user.email || user.uid);
+                        // Show the dashboard as the user is authenticated
+                        premiumContentEl.classList.remove("hidden");
                     }
                 });
-            } catch (e) {
-                let errorMessage = `❌ Firebase initialization failed: ${e.message}`;
-                if (e.code === 'auth/invalid-api-key') {
-                    errorMessage = `<div class="p-4 bg-red-800 rounded-xl border border-red-700"><p class="font-bold text-red-200">❌ Initialization Failed</p><p class="text-red-300 mt-2">The provided Firebase API key is invalid. Please ensure the project settings are correct and try again.</p></div>`;
-                }
-                console.error(errorMessage, e);
-                loadingEl.innerHTML = errorMessage;
-                loadingEl.classList.remove('hidden');
+
+                // Since we're not handling sign-in here, we don't need the custom token logic.
+                // We'll let the onAuthStateChanged listener handle the redirect if the token is missing.
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                loadingEl.classList.add("hidden");
+                premiumContentEl.classList.add("hidden");
+                // Fallback to home page on error
+                window.location.href = './login.html';
             }
         }
 
-        initApp();
+        logoutBtn.addEventListener("click", async () => {
+            try {
+                await signOut(auth);
+                window.location.href = "./login.html";
+            } catch (error) {
+                console.error("Logout error:", error);
+            }
+        });
+
+        window.onload = initializeFirebase;
     </script>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 text-gray-200">
+    <div id="loading" class="text-center p-6 text-xl font-medium">
+        Checking login...
+    </div>
+
+    <div id="main-container" class="hidden max-w-4xl w-full space-y-8">
+        <div id="premium-content" class="container-card hidden">
+            <div class="flex flex-col sm:flex-row items-center justify-between mb-8">
+                <h1 class="text-3xl font-extrabold text-gray-100 sm:text-4xl">
+                    <span class="text-yellow-500">AI</span> Agent Dashboard
+                </h1>
+                <button id="logoutBtn" class="btn-primary mt-4 sm:mt-0 text-sm px-4 py-2">Log out</button>
+            </div>
+            
+            <hr class="border-t-2 border-gray-700 my-8">
+
+            <div id="ai-agent-section" class="space-y-6">
+                <h2 class="text-2xl font-bold text-gray-100 text-center">Your AI Agent</h2>
+                <div class="bg-gray-900 p-6 rounded-xl border border-gray-700 h-[600px] overflow-hidden">
+                    <iframe src="https://app.relevanceai.com/agents/bcbe5a/2bf5cc2a-7929-4eda-84d0-8c3c9fa9fbfb/7302844c-15b5-4e6c-a9f4-7c162fd2afd4/share?hide_tool_steps=false&hide_file_uploads=false&hide_conversation_list=false&bubble_style=agent&primary_color=%23685FFF&bubble_icon=pd%2Fchat&input_placeholder_text=Type+your+message...&hide_logo=false&hide_description=false" width="100%" height="100%" frameborder="0" allow="microphone"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
