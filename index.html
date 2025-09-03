@@ -81,7 +81,6 @@
                         userId = user.uid;
                         userDisplayId.textContent = userId;
                         userEmailDisplay.textContent = user.email || 'N/A';
-                        await fetchUserData(userId);
                         await loadUserProfileData(user);
                         showLoggedInState();
                     } else if (user && user.isAnonymous) {
@@ -101,31 +100,22 @@
             }
         }
 
-        async function fetchUserData(uid) {
-            const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
-            const docRef = doc(db, userDocPath);
-            const docSnap = await getDoc(docRef);
-
-            if (!docSnap.exists()) {
-                await setDoc(docRef, { email: auth.currentUser.email, subscription: 'None' });
-                userSubscriptionDisplay.textContent = 'None';
-                renderPremiumLinks('None');
-            } else {
-                const userData = docSnap.data();
-                userSubscriptionDisplay.textContent = userData.subscription || 'None';
-                renderPremiumLinks(userData.subscription);
-            }
-        }
-
         async function loadUserProfileData(user) {
             const userDocPath = `/artifacts/${currentAppId}/users/${user.uid}/profile/data`;
             const docRef = doc(db, userDocPath);
             const docSnap = await getDoc(docRef);
 
-            if (docSnap.exists()) {
-                const data = docSnap.data();
+            if (!docSnap.exists()) {
+                await setDoc(docRef, { email: user.email, subscription: 'None' });
+                userSubscriptionDisplay.textContent = 'None';
+                profileSubscriptionInput.value = 'None';
+                renderPremiumLinks('None');
+            } else {
+                const userData = docSnap.data();
+                userSubscriptionDisplay.textContent = userData.subscription || 'None';
                 profileEmailInput.value = user.email || '';
-                profileSubscriptionInput.value = data.subscription || 'None';
+                profileSubscriptionInput.value = userData.subscription || 'None';
+                renderPremiumLinks(userData.subscription);
             }
         }
 
@@ -140,18 +130,25 @@
         }
         
         function renderPremiumLinks(subscriptionTier) {
-            document.getElementById('link-my-profile').classList.remove('hidden');
-            document.getElementById('link-email-agent').classList.remove('hidden'); // Show email agent for all logged-in users
-            document.getElementById('profile-form').classList.remove('hidden');
+            const linkMyProfile = document.getElementById('link-my-profile');
+            const linkEmailAgent = document.getElementById('link-email-agent');
+            const linkPremiumContent = document.getElementById('link-premium-content');
+            const linkTier1 = document.getElementById('link-tier-1');
+            const emailAgentBtn = document.getElementById('email-agent-btn');
+            const profileForm = document.getElementById('profile-form');
 
+            linkMyProfile.classList.remove('hidden');
+            linkEmailAgent.classList.remove('hidden');
+            profileForm.classList.remove('hidden');
+            
             if (subscriptionTier === 'Tier 1') {
-                document.getElementById('link-premium-content').classList.remove('hidden');
-                document.getElementById('link-tier-1').classList.remove('hidden');
-                document.getElementById('email-agent-btn').classList.add('hidden');
+                linkPremiumContent.classList.remove('hidden');
+                linkTier1.classList.remove('hidden');
+                emailAgentBtn.classList.add('hidden');
             } else {
-                document.getElementById('link-premium-content').classList.add('hidden');
-                document.getElementById('link-tier-1').classList.add('hidden');
-                document.getElementById('email-agent-btn').classList.remove('hidden');
+                linkPremiumContent.classList.add('hidden');
+                linkTier1.classList.add('hidden');
+                emailAgentBtn.classList.remove('hidden');
             }
         }
 
@@ -456,10 +453,10 @@
                                 <button data-target="hidden-page-3" class="btn-primary">My Profile</button>
                             </li>
                             <li id="link-premium-content" class="hidden">
-                                <a href="#" class="btn-primary">AI-Powered Insights (Premium)</a>
+                                <button data-target="hidden-page-1" class="btn-primary">AI-Powered Insights (Premium)</button>
                             </li>
                              <li id="link-tier-1" class="hidden">
-                                <a href="#" class="btn-primary">Tier 1 Dashboard</a>
+                                <button data-target="hidden-page-2" class="btn-primary">Tier 1 Dashboard</button>
                             </li>
                         </ul>
                     </nav>
