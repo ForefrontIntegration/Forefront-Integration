@@ -1,0 +1,100 @@
+mutation SeedDatabase @auth(level: NO_ACCESS) {
+  user_insertMany(data: [
+    {
+      id: "6b4f9c7a-5b3a-4c2d-9a8f-7e2a3b1c5d6e",
+      createdAt: "2024-04-26T00:00:00Z",
+      displayName: "Bob User",
+      email: "bob@example.com",
+      googleId: "1234567890",
+      photoUrl: "https://example.com/bob.jpg"
+    },
+    {
+      id: "7c5e0d8b-6c4b-4d3e-8b9a-8f3b2c1e6d7f",
+      createdAt: "2024-04-27T00:00:00Z",
+      displayName: "Alice User",
+      email: "alice@example.com",
+      googleId: "0987654321",
+      photoUrl: "https://example.com/alice.jpg"
+    }
+  ])
+  subscriptionType_insertMany(data: [
+    {
+      id: "8d6f1e9c-7d5c-4e4f-9c0b-9e4b3d2f7e8g",
+      createdAt: "2024-04-26T00:00:00Z",
+      duration: "Monthly",
+      features: ["Feature 1", "Feature 2"],
+      name: "Basic",
+      price: 9.99
+    },
+    {
+      id: "9e7g2fa0-8e6d-4f5g-ad1c-ae5c4e3g8f9h",
+      createdAt: "2024-04-27T00:00:00Z",
+      duration: "Yearly",
+      features: ["Feature 1", "Feature 2", "Feature 3"],
+      name: "Premium",
+      price: 99.99
+    }
+  ])
+  userSubscription_insertMany(data: [
+    {
+      id: "af8h3gb1-9f7e-5g6h-be2d-bf6d5e4h9g0i",
+      subscriptionTypeId: "8d6f1e9c-7d5c-4e4f-9c0b-9e4b3d2f7e8g",
+      userId: "6b4f9c7a-5b3a-4c2d-9a8f-7e2a3b1c5d6e",
+      createdAt: "2024-04-28T00:00:00Z",
+      endDate: "2024-05-28T00:00:00Z",
+      startDate: "2024-04-28T00:00:00Z",
+      status: "Active",
+      stripeSubscriptionId: "sub_123",
+      updatedAt: "2024-04-28T00:00:00Z"
+    },
+    {
+      id: "bc9i4hc2-0a8f-6h7i-cf3e-cg7e6f5i0h1j",
+      subscriptionTypeId: "9e7g2fa0-8e6d-4f5g-ad1c-ae5c4e3g8f9h",
+      userId: "7c5e0d8b-6c4b-4d3e-8b9a-8f3b2c1e6d7f",
+      createdAt: "2024-04-29T00:00:00Z",
+      endDate: "2025-04-29T00:00:00Z",
+      startDate: "2024-04-29T00:00:00Z",
+      status: "Active",
+      stripeSubscriptionId: "sub_456",
+      updatedAt: "2024-04-29T00:00:00Z"
+    }
+  ])
+  payment_insertMany(data: [
+    {
+      id: "cd0j5id3-1b9g-7i8j-dg4f-dh8f7g6j1i2k",
+      userId: "6b4f9c7a-5b3a-4c2d-9a8f-7e2a3b1c5d6e",
+      userSubscriptionId: "af8h3gb1-9f7e-5g6h-be2d-bf6d5e4h9g0i",
+      amount: 9.99,
+      createdAt: "2024-04-28T00:00:00Z",
+      currency: "USD",
+      status: "Paid",
+      stripeChargeId: "ch_123"
+    },
+    {
+      id: "de1k6je4-2c0h-8j9k-eh5g-ei9g8h7k2j3l",
+      userId: "7c5e0d8b-6c4b-4d3e-8b9a-8f3b2c1e6d7f",
+      userSubscriptionId: "bc9i4hc2-0a8f-6h7i-cf3e-cg7e6f5i0h1j",
+      amount: 99.99,
+      createdAt: "2024-04-29T00:00:00Z",
+      currency: "USD",
+      status: "Paid",
+      stripeChargeId: "ch_456"
+    }
+  ])
+  aIAgent_insertMany(data: [
+    {
+      id: "ef2l7kf5-3d1i-9k0l-fi6h-fj0h9i8l3k4m",
+      createdAt: "2024-04-26T00:00:00Z",
+      description: "AI Agent Description 1",
+      name: "AI Agent 1",
+      usageInstructions: "Usage Instructions 1"
+    },
+    {
+      id: "fg3m8lg6-4e2j-0l1m-gj7i-gk1i0j9l4m5n",
+      createdAt: "2024-04-27T00:00:00Z",
+      description: "AI Agent Description 2",
+      name: "AI Agent 2",
+      usageInstructions: "Usage Instructions 2"
+    }
+  ])
+}

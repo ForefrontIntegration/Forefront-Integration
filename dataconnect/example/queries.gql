@@ -1,0 +1,36 @@
+mutation InsertNewUser @auth(level: USER) {
+  user_insert(data: {
+    displayName: "New User",
+    email: "newuser@example.com",
+    googleId: "1234567890"
+  })
+}
+
+query ListAllSubscriptionTypes @auth(level: PUBLIC) {
+  subscriptionTypes {
+    id
+    name
+    price
+    duration
+    features
+  }
+}
+
+mutation UpdateUserSubscriptionStatus($id: UUID!, $status: String!) @auth(level: USER) {
+  userSubscription_update(
+    id: $id,
+    data: {
+      status: $status
+    }
+  )
+}
+
+query GetUserPayments($userId: UUID!) @auth(level: USER) {
+  payments(where: { userId: { eq: $userId } }) {
+    id
+    amount
+    createdAt
+    currency
+    status
+  }
+}

@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User profile
+    match /artifacts/{appId}/users/{uid}/profile/data {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Helper to check subscription tier
+    function hasSubscription(requiredTiers) {
+      return request.auth != null
+        && get(/databases/$(database)/documents/artifacts/$(appId)/users/$(request.auth.uid)/profile/data)
+            .data.subscription in requiredTiers;
+    }
+
+    // Free content - any logged-in user can access
+    match /artifacts/{appId}/public/data/free_content/{documentId} {
+      allow read: if request.auth != null;
+    }
+
+    // Tier 1
+    match /artifacts/{appId}/public/data/tier1_content/{documentId} {
+      allow read: if hasSubscription(["Tier 1", "Tier 2", "Tier 3"]);
+    }
+
+    // Tier 2
+    match /artifacts/{appId}/public/data/tier2_content/{documentId} {
+      allow read: if hasSubscription(["Tier 2", "Tier 3"]);
+    }
+
+    // Tier 3
+    match /artifacts/{appId}/public/data/tier3_content/{documentId} {
+      allow read: if hasSubscription(["Tier 3"]);
+    }
+  }
+}
+

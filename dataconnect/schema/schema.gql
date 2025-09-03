@@ -1,0 +1,46 @@
+type User @table {
+  googleId: String!
+  displayName: String!
+  email: String!
+  createdAt: Timestamp!
+  photoUrl: String
+}
+
+type AIAgent @table {
+  name: String!
+  description: String!
+  createdAt: Timestamp!
+  functionalityDetails: String
+  usageInstructions: String
+}
+
+type SubscriptionType @table {
+  name: String!
+  price: Float!
+  createdAt: Timestamp!
+  features: [String]
+  duration: String
+}
+
+type UserSubscription @table {
+  user: User!
+  subscriptionType: SubscriptionType!
+  startDate: Timestamp!
+  endDate: Timestamp!
+  status: String!
+  stripeSubscriptionId: String!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+  lastPaymentDate: Timestamp
+}
+
+type Payment @table {
+  user: User!
+  userSubscription: UserSubscription!
+  amount: Float!
+  currency: String!
+  status: String!
+  stripeChargeId: String!
+  createdAt: Timestamp!
+  receiptUrl: String
+}
