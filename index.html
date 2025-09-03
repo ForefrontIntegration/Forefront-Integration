@@ -8,25 +8,33 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Stripe.js v3 is required for handling payments on the front-end -->
-    <script src="https://js.stripe.com/v3/"></script>
     <script type="module">
         // Import the necessary Firebase SDKs
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, updateEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, updateEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // IMPORTANT: The following global variables are automatically provided by the Canvas environment.
-        // DO NOT change their names or content.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        // Placeholder for Stripe's public key
-        const stripeKey = typeof __stripe_public_key !== 'undefined' ? __stripe_public_key : 'pk_test_...';
 
-        let auth, db, stripe;
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
+            authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
+            projectId: "forefront-ugc-subscriptions",
+            storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
+            messagingSenderId: "988222732912",
+            appId: "1:988222732912:web:151a0b709106dfc67692b5",
+            measurementId: "G-ZXHZ4T2VKS"
+        };
+       
+        const appId = "ugc-hub-app";
+        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
+        const firebaseCustomConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+
+
+        let auth, db;
         let userId = '';
+
 
         // UI Elements
         const loggedInContainer = document.getElementById('logged-in-container');
@@ -34,17 +42,13 @@
         const userEmailDisplay = document.getElementById('user-email');
         const userDisplayId = document.getElementById('user-id-display');
         const userSubscriptionDisplay = document.getElementById('user-subscription');
-        const subscribeSection = document.getElementById('subscribe-section');
-        const manageSubscriptionBtn = document.getElementById('manage-subscription-btn');
+        const subscribeBtn = document.getElementById('subscribe-btn');
         const pageLinks = document.querySelectorAll('.page-link');
         const profileForm = document.getElementById('profile-form');
         const profileEmailInput = document.getElementById('profile-email');
         const profileSubscriptionInput = document.getElementById('profile-subscription');
         const profilePage = document.getElementById('hidden-page-3');
-        const loginForm = document.getElementById('login-form');
-        const errorContainer = document.getElementById('error-container');
-        const errorMessage = document.getElementById('error-message');
-        const googleSignInBtn = document.getElementById('google-signin-btn');
+
 
         const contentPages = {
             'hidden-page-1': document.getElementById('hidden-page-1'),
@@ -52,30 +56,32 @@
             'hidden-page-3': profilePage
         };
 
-        // Main function to initialize Firebase and set up auth listener
-        async function initializeAppAndAuth() {
-            try {
-                if (!firebaseConfig) {
-                    throw new Error("Firebase configuration not available.");
-                }
 
-                const app = initializeApp(firebaseConfig);
+        const loginForm = document.getElementById('login-form');
+        const errorContainer = document.getElementById('error-container');
+        const errorMessage = document.getElementById('error-message');
+        const googleSignInBtn = document.getElementById('google-signin-btn');
+
+
+        // Main function to initialize Firebase and set up auth listener
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseCustomConfig);
                 const analytics = getAnalytics(app);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 setLogLevel('debug');
-                
-                // Initialize Stripe
-                stripe = Stripe(stripeKey);
 
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
+
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
 
+
                 onAuthStateChanged(auth, async (user) => {
-                    if (user && !user.isAnonymous) {
+                    if (user && user.isAnonymous === false) {
                         userId = user.uid;
                         userDisplayId.textContent = userId;
                         userEmailDisplay.textContent = user.email || 'N/A';
@@ -94,15 +100,17 @@
                     }
                 });
             } catch (error) {
-                console.error("Application initialization or auth error:", error);
+                console.error("Firebase initialization or auth error:", error);
                 showError("Failed to initialize the application. Please check the console for details.");
             }
         }
 
+
         async function fetchUserData(uid) {
-            const userDocPath = `/artifacts/${appId}/users/${uid}/profile/data`;
+            const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
             const docRef = doc(db, userDocPath);
             const docSnap = await getDoc(docRef);
+
 
             if (!docSnap.exists()) {
                 await setDoc(docRef, { email: auth.currentUser.email, subscription: 'None' });
@@ -115,107 +123,55 @@
             }
         }
 
+
         async function loadUserProfileData(user) {
-            const userDocPath = `/artifacts/${appId}/users/${user.uid}/profile/data`;
+            const userDocPath = `/artifacts/${currentAppId}/users/${user.uid}/profile/data`;
             const docRef = doc(db, userDocPath);
             const docSnap = await getDoc(docRef);
+
 
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 profileEmailInput.value = user.email || '';
                 profileSubscriptionInput.value = data.subscription || 'None';
-                profileForm.classList.remove('hidden');
             }
         }
+
 
         function showLoggedInState() {
             loggedInContainer.classList.remove('hidden');
             loggedOutContainer.classList.add('hidden');
         }
 
+
         function showLoggedOutState() {
             loggedInContainer.classList.add('hidden');
             loggedOutContainer.classList.remove('hidden');
-            // Hide the profile form when logged out
-            profileForm.classList.add('hidden');
         }
-        
+       
         function renderPremiumLinks(subscriptionTier) {
             document.getElementById('link-my-profile').classList.remove('hidden');
 
-            // Show/hide subscription buttons based on current status
-            if (subscriptionTier && subscriptionTier !== 'None') {
+
+            if (subscriptionTier === 'Tier 1') {
                 document.getElementById('link-premium-content').classList.remove('hidden');
                 document.getElementById('link-tier-1').classList.remove('hidden');
-                subscribeSection.classList.add('hidden');
-                manageSubscriptionBtn.classList.remove('hidden');
+                subscribeBtn.classList.add('hidden');
             } else {
                 document.getElementById('link-premium-content').classList.add('hidden');
                 document.getElementById('link-tier-1').classList.add('hidden');
-                subscribeSection.classList.remove('hidden');
-                manageSubscriptionBtn.classList.add('hidden');
+                subscribeBtn.classList.remove('hidden');
             }
         }
 
-        async function createStripeCheckoutSession(priceId) {
-            try {
-                // This is a simulated call. In a real application, you'd send this to your backend.
-                // The backend would then make the actual Stripe API call to create the session
-                // and return the session ID.
-                const response = await fetch('/create-checkout-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ priceId, uid: userId })
-                });
-
-                const session = await response.json();
-                if (session.id) {
-                    // Redirect to Stripe Checkout page
-                    const { error } = await stripe.redirectToCheckout({
-                        sessionId: session.id,
-                    });
-                    if (error) {
-                        console.error("Stripe Checkout error:", error);
-                        showError(error.message);
-                    }
-                } else {
-                    throw new Error("Failed to create Stripe Checkout session.");
-                }
-
-            } catch (error) {
-                console.error("Error creating Stripe Checkout session:", error);
-                showError("Payment failed. Please try again later.");
-            }
-        }
-
-        async function createStripeCustomerPortal() {
-            try {
-                // In a real application, this would call your backend to create a Stripe Customer Portal session
-                const response = await fetch('/create-customer-portal-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uid: userId })
-                });
-
-                const session = await response.json();
-                if (session.url) {
-                    window.location.href = session.url;
-                } else {
-                    throw new Error("Failed to create customer portal session.");
-                }
-            } catch (error) {
-                console.error("Error creating customer portal:", error);
-                showError("Failed to manage subscription. Please try again.");
-            }
-        }
 
         pageLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetPageId = e.target.dataset.target;
-            
+               
                 Object.values(contentPages).forEach(page => page.classList.add('hidden'));
-            
+               
                 const targetPage = document.getElementById(targetPageId);
                 if (targetPage) {
                     targetPage.classList.remove('hidden');
@@ -223,10 +179,12 @@
             });
         });
 
+
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = e.target.email.value;
             const password = e.target.password.value;
+
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
@@ -238,27 +196,35 @@
             }
         });
 
+
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
+
             const newEmail = profileEmailInput.value;
             const newSubscription = profileSubscriptionInput.value;
+
 
             try {
                 if (!auth.currentUser) {
                     throw new Error("No authenticated user found.");
                 }
+
+
                 const user = auth.currentUser;
-                const userDocPath = `/artifacts/${appId}/users/${user.uid}/profile/data`;
+                const userDocPath = `/artifacts/${currentAppId}/users/${user.uid}/profile/data`;
                 const docRef = doc(db, userDocPath);
+
 
                 // Update email in Firebase Auth
                 await updateEmail(user, newEmail);
                 userEmailDisplay.textContent = newEmail;
 
+
                 // Update subscription in Firestore
                 await updateDoc(docRef, { subscription: newSubscription });
                 userSubscriptionDisplay.textContent = newSubscription;
+
 
                 showError("Profile updated successfully!", false);
             } catch (error) {
@@ -266,6 +232,7 @@
                 showError(error.message);
             }
         });
+
 
         async function connectWithGoogle() {
             const provider = new GoogleAuthProvider();
@@ -276,7 +243,7 @@
                 showError("Google sign-in failed. Please try again.");
             }
         }
-        
+       
         document.getElementById('logout-btn').addEventListener('click', async () => {
             try {
                 await signOut(auth);
@@ -287,17 +254,6 @@
             }
         });
 
-        document.getElementById('subscribe-btn-tier1').addEventListener('click', () => {
-            createStripeCheckoutSession('price_1O38P6A09e8E68w1fN0yUqL8');
-        });
-
-        document.getElementById('subscribe-btn-tier2').addEventListener('click', () => {
-            createStripeCheckoutSession('price_1O38QGA09e8E68w1fN0yUqL9');
-        });
-
-        if (manageSubscriptionBtn) {
-             manageSubscriptionBtn.addEventListener('click', createStripeCustomerPortal);
-        }
 
         function showError(message, isError = true) {
             errorMessage.textContent = message;
@@ -307,12 +263,14 @@
                 errorContainer.classList.add('hidden');
             }
         }
-        
+       
         if (googleSignInBtn) {
             googleSignInBtn.addEventListener('click', connectWithGoogle);
         }
 
-        initializeAppAndAuth();
+
+        initializeFirebase();
+
 
         document.getElementById('get-started-btn').addEventListener('click', () => {
             document.getElementById('forms-section').scrollIntoView({ behavior: 'smooth' });
@@ -325,18 +283,21 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
+
         .gradient-bg {
             background-color: #1a202c;
             background-image: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
         }
 
+
         .btn-primary {
             @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
         }
-        
+       
         .btn-secondary {
             @apply bg-transparent text-gray-400 font-semibold py-3 px-6 rounded-xl border border-gray-400 shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-gray-400 hover:text-white;
         }
+
 
         .nav-link {
             @apply text-gray-400 hover:text-yellow-400 transition duration-300;
@@ -358,6 +319,7 @@
         </div>
     </nav>
 
+
     <header class="gradient-bg py-16 md:py-24">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
             <h1 class="text-4xl sm:text-5xl lg:text-7xl font-extrabold leading-tight mb-4 max-w-4xl text-gray-100">
@@ -371,6 +333,7 @@
             </div>
         </div>
     </header>
+
 
     <section id="features-section" class="bg-gray-800 py-16 md:py-24">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -418,6 +381,7 @@
         </div>
     </section>
 
+
     <section id="forms-section" class="gradient-bg py-16 md:py-24 flex items-center justify-center">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
             <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 text-center mb-12">
@@ -426,6 +390,7 @@
             <div id="error-container" class="hidden mb-6 p-4 rounded-xl bg-red-800 text-red-200">
                 <p id="error-message" class="text-sm font-medium"></p>
             </div>
+
 
             <div id="logged-in-container" class="hidden w-full">
                 <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
@@ -443,28 +408,14 @@
                             Subscription Status: <span id="user-subscription" class="font-bold text-yellow-400"></span>
                         </p>
                     </div>
-                    
-                    <!-- Subscription plans section -->
-                    <div id="subscribe-section">
-                        <h3 class="text-xl font-bold text-gray-100 mb-4">Choose a Plan</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
-                                <h4 class="font-bold text-yellow-500 text-lg mb-2">Tier 1 Plan</h4>
-                                <p class="text-gray-400 mb-4">Access to exclusive AI tools and analytics.</p>
-                                <button id="subscribe-btn-tier1" class="w-full btn-primary">Subscribe for $10/month</button>
-                            </div>
-                            <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
-                                <h4 class="font-bold text-yellow-500 text-lg mb-2">Tier 2 Plan</h4>
-                                <p class="text-gray-400 mb-4">All Tier 1 features, plus advanced content promotion.</p>
-                                <button id="subscribe-btn-tier2" class="w-full btn-primary">Subscribe for $20/month</button>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="my-8 hidden" id="manage-subscription-container">
-                        <button id="manage-subscription-btn" class="w-full btn-secondary text-center">Manage Subscription</button>
-                    </div>
 
+                    <div id="subscribe-container">
+                       <a href="./premium_content.html" id="subscribe-btn" class="w-full btn-primary text-center block mt-6">
+                            Email Draft Agent
+                        </a>
+                    </div>
+                   
                     <nav class="my-8">
                         <ul class="flex flex-wrap sm:flex-nowrap justify-center space-x-4">
                             <li class="page-link hidden" id="link-my-profile">
@@ -473,11 +424,12 @@
                             <li id="link-premium-content" class="hidden">
                                 <a href="./premium_content.html" class="btn-primary">AI-Powered Insights (Premium)</a>
                             </li>
-                            <li id="link-tier-1" class="hidden">
+                             <li id="link-tier-1" class="hidden">
                                 <a href="./tier1.html" class="btn-primary">Tier 1 Dashboard</a>
                             </li>
                         </ul>
                     </nav>
+
 
                     <div id="tiers-container">
                         <div id="hidden-page-1" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700">
@@ -486,7 +438,7 @@
                                 This page is accessible to all signed-in creators and contains our essential tools for content creation. Here you'll find the basic dashboard and file management systems.
                             </p>
                         </div>
-                        
+                       
                         <div id="hidden-page-2" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
                             <h4 class="font-bold text-yellow-500 text-lg mb-2">Advanced Analytics (All Users)</h4>
                             <p class="text-gray-400">
@@ -494,10 +446,11 @@
                             </p>
                         </div>
 
+
                         <div id="hidden-page-3" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
                             <h4 class="font-bold text-yellow-500 text-lg mb-2">My Profile</h4>
                             <p class="text-gray-400 mb-4">Update your profile information below.</p>
-                            <form id="profile-form" class="hidden space-y-4">
+                            <form id="profile-form" class="space-y-4 hidden">
                                 <div>
                                     <label for="profile-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
                                     <input type="email" id="profile-email" placeholder="New Email Address" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300">
@@ -513,10 +466,11 @@
                 </div>
             </div>
 
+
             <div id="logged-out-container" class="w-full max-w-md mx-auto">
                 <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
                     <h2 class="text-2xl font-bold text-gray-100 text-center mb-6">Log In</h2>
-                    <form id="login-form" class="space-y-6">
+                    <form id="login-form" class="hidden space-y-6">
                         <div>
                             <label for="login-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
                             <input type="email" id="login-email" name="email" class="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-300" required>
@@ -528,10 +482,12 @@
                         <button type="submit" class="w-full btn-primary mt-6">Log In</button>
                     </form>
 
+
                     <div class="relative flex items-center justify-center py-4">
                         <div class="w-full h-px bg-gray-600 hidden"></div>
                         <span class="absolute px-4 text-sm text-gray-500 bg-gray-800 hidden">or</span>
                     </div>
+
 
                     <button
                         id="google-signin-btn"
@@ -545,6 +501,7 @@
                         <span>Sign in with Google</span>
                     </button>
 
+
                     <p class="text-center text-sm text-gray-400 mt-6 hidden">
                         Don't have an account?
                         <a href="./signup.html" class="text-yellow-500 hover:underline">Create Account</a>
@@ -555,3 +512,4 @@
     </section>
 </body>
 </html>
+
