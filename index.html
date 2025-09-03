@@ -10,31 +10,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         // Import the necessary Firebase SDKs
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, updateEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, updateEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDOwV2NUiktr-JY8VewTD1tBvsah2q2T6s",
-            authDomain: "forefront-ugc-subscriptions.firebaseapp.com",
-            projectId: "forefront-ugc-subscriptions",
-            storageBucket: "forefront-ugc-subscriptions.firebasestorage.app",
-            messagingSenderId: "988222732912",
-            appId: "1:988222732912:web:151a0b709106dfc67692b5",
-            measurementId: "G-ZXHZ4T2VKS"
-        };
-       
+        // IMPORTANT: Use the global variables for app id, firebase config, and auth token
         const appId = "ugc-hub-app";
         const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
-        const firebaseCustomConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
         let auth, db;
         let userId = '';
-
 
         // UI Elements
         const loggedInContainer = document.getElementById('logged-in-container');
@@ -49,36 +35,30 @@
         const profileSubscriptionInput = document.getElementById('profile-subscription');
         const profilePage = document.getElementById('hidden-page-3');
 
-
         const contentPages = {
             'hidden-page-1': document.getElementById('hidden-page-1'),
             'hidden-page-2': document.getElementById('hidden-page-2'),
             'hidden-page-3': profilePage
         };
 
-
         const loginForm = document.getElementById('login-form');
         const errorContainer = document.getElementById('error-container');
         const errorMessage = document.getElementById('error-message');
         const googleSignInBtn = document.getElementById('google-signin-btn');
 
-
         // Main function to initialize Firebase and set up auth listener
         async function initializeFirebase() {
             try {
-                const app = initializeApp(firebaseCustomConfig);
-                const analytics = getAnalytics(app);
+                const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 setLogLevel('debug');
-
 
                 if (typeof __initial_auth_token !== 'undefined') {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
-
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user && user.isAnonymous === false) {
@@ -105,12 +85,10 @@
             }
         }
 
-
         async function fetchUserData(uid) {
             const userDocPath = `/artifacts/${currentAppId}/users/${uid}/profile/data`;
             const docRef = doc(db, userDocPath);
             const docSnap = await getDoc(docRef);
-
 
             if (!docSnap.exists()) {
                 await setDoc(docRef, { email: auth.currentUser.email, subscription: 'None' });
@@ -123,12 +101,10 @@
             }
         }
 
-
         async function loadUserProfileData(user) {
             const userDocPath = `/artifacts/${currentAppId}/users/${user.uid}/profile/data`;
             const docRef = doc(db, userDocPath);
             const docSnap = await getDoc(docRef);
-
 
             if (docSnap.exists()) {
                 const data = docSnap.data();
@@ -137,21 +113,20 @@
             }
         }
 
-
         function showLoggedInState() {
             loggedInContainer.classList.remove('hidden');
             loggedOutContainer.classList.add('hidden');
+            profileForm.classList.remove('hidden'); // Show profile form when logged in
         }
-
 
         function showLoggedOutState() {
             loggedInContainer.classList.add('hidden');
             loggedOutContainer.classList.remove('hidden');
+            loginForm.classList.remove('hidden');
         }
-       
+
         function renderPremiumLinks(subscriptionTier) {
             document.getElementById('link-my-profile').classList.remove('hidden');
-
 
             if (subscriptionTier === 'Tier 1') {
                 document.getElementById('link-premium-content').classList.remove('hidden');
@@ -164,14 +139,13 @@
             }
         }
 
-
         pageLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetPageId = e.target.dataset.target;
-               
+
                 Object.values(contentPages).forEach(page => page.classList.add('hidden'));
-               
+
                 const targetPage = document.getElementById(targetPageId);
                 if (targetPage) {
                     targetPage.classList.remove('hidden');
@@ -179,12 +153,10 @@
             });
         });
 
-
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = e.target.email.value;
             const password = e.target.password.value;
-
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
@@ -196,35 +168,28 @@
             }
         });
 
-
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-
             const newEmail = profileEmailInput.value;
             const newSubscription = profileSubscriptionInput.value;
-
 
             try {
                 if (!auth.currentUser) {
                     throw new Error("No authenticated user found.");
                 }
 
-
                 const user = auth.currentUser;
                 const userDocPath = `/artifacts/${currentAppId}/users/${user.uid}/profile/data`;
                 const docRef = doc(db, userDocPath);
-
 
                 // Update email in Firebase Auth
                 await updateEmail(user, newEmail);
                 userEmailDisplay.textContent = newEmail;
 
-
                 // Update subscription in Firestore
                 await updateDoc(docRef, { subscription: newSubscription });
                 userSubscriptionDisplay.textContent = newSubscription;
-
 
                 showError("Profile updated successfully!", false);
             } catch (error) {
@@ -232,7 +197,6 @@
                 showError(error.message);
             }
         });
-
 
         async function connectWithGoogle() {
             const provider = new GoogleAuthProvider();
@@ -243,7 +207,7 @@
                 showError("Google sign-in failed. Please try again.");
             }
         }
-       
+
         document.getElementById('logout-btn').addEventListener('click', async () => {
             try {
                 await signOut(auth);
@@ -254,7 +218,6 @@
             }
         });
 
-
         function showError(message, isError = true) {
             errorMessage.textContent = message;
             if (isError && message) {
@@ -263,14 +226,12 @@
                 errorContainer.classList.add('hidden');
             }
         }
-       
+
         if (googleSignInBtn) {
             googleSignInBtn.addEventListener('click', connectWithGoogle);
         }
 
-
         initializeFirebase();
-
 
         document.getElementById('get-started-btn').addEventListener('click', () => {
             document.getElementById('forms-section').scrollIntoView({ behavior: 'smooth' });
@@ -283,21 +244,18 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-
         .gradient-bg {
             background-color: #1a202c;
             background-image: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
         }
 
-
         .btn-primary {
             @apply bg-yellow-500 text-gray-900 font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-yellow-600;
         }
-       
+
         .btn-secondary {
             @apply bg-transparent text-gray-400 font-semibold py-3 px-6 rounded-xl border border-gray-400 shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-gray-400 hover:text-white;
         }
-
 
         .nav-link {
             @apply text-gray-400 hover:text-yellow-400 transition duration-300;
@@ -319,7 +277,6 @@
         </div>
     </nav>
 
-
     <header class="gradient-bg py-16 md:py-24">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
             <h1 class="text-4xl sm:text-5xl lg:text-7xl font-extrabold leading-tight mb-4 max-w-4xl text-gray-100">
@@ -333,7 +290,6 @@
             </div>
         </div>
     </header>
-
 
     <section id="features-section" class="bg-gray-800 py-16 md:py-24">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -381,7 +337,6 @@
         </div>
     </section>
 
-
     <section id="forms-section" class="gradient-bg py-16 md:py-24 flex items-center justify-center">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
             <h2 class="text-3xl sm:text-4xl font-bold text-gray-100 text-center mb-12">
@@ -390,7 +345,6 @@
             <div id="error-container" class="hidden mb-6 p-4 rounded-xl bg-red-800 text-red-200">
                 <p id="error-message" class="text-sm font-medium"></p>
             </div>
-
 
             <div id="logged-in-container" class="hidden w-full">
                 <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
@@ -409,13 +363,12 @@
                         </p>
                     </div>
 
-
                     <div id="subscribe-container">
                        <a href="./premium_content.html" id="subscribe-btn" class="w-full btn-primary text-center block mt-6">
                             Email Draft Agent
                         </a>
                     </div>
-                   
+
                     <nav class="my-8">
                         <ul class="flex flex-wrap sm:flex-nowrap justify-center space-x-4">
                             <li class="page-link hidden" id="link-my-profile">
@@ -430,7 +383,6 @@
                         </ul>
                     </nav>
 
-
                     <div id="tiers-container">
                         <div id="hidden-page-1" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700">
                             <h4 class="font-bold text-yellow-500 text-lg mb-2">Creator Hub (All Users)</h4>
@@ -438,14 +390,13 @@
                                 This page is accessible to all signed-in creators and contains our essential tools for content creation. Here you'll find the basic dashboard and file management systems.
                             </p>
                         </div>
-                       
+
                         <div id="hidden-page-2" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
                             <h4 class="font-bold text-yellow-500 text-lg mb-2">Advanced Analytics (All Users)</h4>
                             <p class="text-gray-400">
                                 This content features detailed analytics on content performance, audience demographics, and revenue tracking.
                             </p>
                         </div>
-
 
                         <div id="hidden-page-3" class="hidden bg-gray-900 p-6 rounded-xl border border-gray-700 mt-4">
                             <h4 class="font-bold text-yellow-500 text-lg mb-2">My Profile</h4>
@@ -466,7 +417,6 @@
                 </div>
             </div>
 
-
             <div id="logged-out-container" class="w-full max-w-md mx-auto">
                 <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
                     <h2 class="text-2xl font-bold text-gray-100 text-center mb-6">Log In</h2>
@@ -482,12 +432,10 @@
                         <button type="submit" class="w-full btn-primary mt-6">Log In</button>
                     </form>
 
-
                     <div class="relative flex items-center justify-center py-4">
                         <div class="w-full h-px bg-gray-600 hidden"></div>
                         <span class="absolute px-4 text-sm text-gray-500 bg-gray-800 hidden">or</span>
                     </div>
-
 
                     <button
                         id="google-signin-btn"
@@ -501,7 +449,6 @@
                         <span>Sign in with Google</span>
                     </button>
 
-
                     <p class="text-center text-sm text-gray-400 mt-6 hidden">
                         Don't have an account?
                         <a href="./signup.html" class="text-yellow-500 hover:underline">Create Account</a>
@@ -512,6 +459,3 @@
     </section>
 </body>
 </html>
-
-
-
