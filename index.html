@@ -72,7 +72,7 @@
             db = getFirestore(app);
             functions = getFunctions(app);
             // Stripe public key
-            stripe = await loadStripe('pk_test_51S318fFNcKJhfWpeEfMop2x2KiahH6eb0tDulPjTqC0cfigJgeGUfsiawUostBvqThwCTZayWRgfBIP83sGtye9X00oxcojiaW');
+            stripe = await loadStripe('pk_live_51S318TFVQNNYUM4UqjRusAcYMAkLl0c6IEYjYLxJAbp1v8Wen8xqH1GhR4TeyK533r63hRcsNIIQikORBjcFY6Zy00eNHaH0zG');
         } catch (error) {
             console.error("Firebase or Stripe initialization failed: ", error);
             displayMessage("Error: Could not initialize the application. Please check your console for details.");
